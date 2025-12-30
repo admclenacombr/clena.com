@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Login - CLENA TV</title>
+<title>Login • CLENA TV</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -38,14 +38,14 @@ body{
 }
 
 h1{
-  margin:0 0 28px;
+  margin:0 0 26px;
   font-size:36px;
   font-weight:900;
   text-align:center;
 }
 h1 span{color:var(--accent)}
 
-.group{margin-bottom:18px}
+.group{margin-bottom:16px}
 label{font-size:14px;color:var(--muted);margin-bottom:6px;display:block}
 
 input{
@@ -91,7 +91,7 @@ input:focus{outline:none;border-color:var(--accent)}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* BOTÃO GOOGLE (APENAS ÍCONE) */
+/* Google (apenas ícone) */
 .btn-google{
   background:#fff;
   border:1px solid #ddd;
@@ -100,15 +100,15 @@ input:focus{outline:none;border-color:var(--accent)}
   align-items:center;
   justify-content:center;
 }
-.btn-google svg{
-  width:22px;
-  height:22px;
-}
+.btn-google svg{width:22px;height:22px}
 
-.link{
-  margin-top:18px;
-  text-align:center;
+.links{
+  display:flex;
+  justify-content:space-between;
+  margin-top:14px;
   font-size:14px;
+}
+.link{
   text-decoration:underline;
   cursor:pointer;
 }
@@ -151,9 +151,8 @@ input:focus{outline:none;border-color:var(--accent)}
 
   <button id="btnLogin" class="btn">Entrar</button>
 
-  <!-- GOOGLE APENAS ÍCONE -->
+  <!-- Google só com ícone -->
   <button id="btnGoogle" class="btn btn-google" title="Entrar com Google">
-    <!-- ÍCONE OFICIAL GOOGLE (SVG) -->
     <svg viewBox="0 0 48 48">
       <path fill="#EA4335" d="M24 9.5c3.54 0 6.01 1.53 7.39 2.81l5.46-5.46C33.42 3.69 28.99 1.5 24 1.5 14.73 1.5 6.91 7.98 3.99 16.63l6.35 4.93C11.82 14.3 17.4 9.5 24 9.5z"/>
       <path fill="#4285F4" d="M46.5 24c0-1.64-.15-3.21-.43-4.73H24v9.02h12.7c-.55 2.96-2.21 5.47-4.7 7.16l7.25 5.63C43.52 36.82 46.5 30.92 46.5 24z"/>
@@ -162,12 +161,16 @@ input:focus{outline:none;border-color:var(--accent)}
     </svg>
   </button>
 
-  <div class="link" id="abrirCadastro">Ainda não tenho uma conta</div>
+  <div class="links">
+    <div class="link" id="abrirCadastro">Criar conta</div>
+    <div class="link" id="btnReset">Esqueci a senha</div>
+  </div>
+
   <div class="msg" id="msg"></div>
 </div>
 
 <!-- MODAL CADASTRO -->
-<div class="modal" id="modal">
+<div class="modal" id="modalCadastro">
   <div class="modal-box">
     <h2>Criar conta</h2>
 
@@ -211,11 +214,12 @@ const sb = supabase.createClient(
 const btnLogin = document.getElementById("btnLogin");
 const btnGoogle = document.getElementById("btnGoogle");
 const btnCadastro = document.getElementById("btnCadastro");
-const modal = document.getElementById("modal");
+const btnReset = document.getElementById("btnReset");
+const modalCadastro = document.getElementById("modalCadastro");
 const msg = document.getElementById("msg");
 
-abrirCadastro.onclick = ()=> modal.style.display="flex";
-fecharCadastro.onclick = ()=> modal.style.display="none";
+abrirCadastro.onclick = ()=> modalCadastro.style.display="flex";
+fecharCadastro.onclick = ()=> modalCadastro.style.display="none";
 
 function loading(btn,on){ btn.classList.toggle("loading",on); }
 
@@ -242,8 +246,13 @@ btnLogin.onclick = async ()=>{
       password: senha.value
     });
     if(error){
-      msg.textContent="Email ou senha inválidos";
-      msg.className="msg error";
+      msg.textContent = "Email ou senha inválidos";
+      msg.className = "msg error";
+      return;
+    }
+    if(!data.session){
+      msg.textContent = "Confirme seu e-mail para continuar";
+      msg.className = "msg error";
       return;
     }
     await validarPerfil(data.user);
@@ -258,7 +267,7 @@ btnGoogle.onclick = async ()=>{
   });
 };
 
-/* CADASTRO */
+/* CADASTRO (envia link de confirmação automaticamente) */
 btnCadastro.onclick = async ()=>{
   loading(btnCadastro,true);
   msgCadastro.textContent="";
@@ -279,7 +288,7 @@ btnCadastro.onclick = async ()=>{
       password:c_senha.value
     });
     if(error){
-      msgCadastro.textContent=error.message;
+      msgCadastro.textContent = error.message;
       msgCadastro.className="msg error";
       return;
     }
@@ -295,11 +304,31 @@ btnCadastro.onclick = async ()=>{
       trial_expires_at:trial.toISOString()
     });
 
-    msgCadastro.textContent="Conta criada! Faça login.";
+    msgCadastro.textContent = "Enviamos um e-mail para confirmar sua conta 📩";
     msgCadastro.className="msg success";
-    setTimeout(()=>modal.style.display="none",2000);
 
   } finally{ loading(btnCadastro,false); }
+};
+
+/* ESQUECI A SENHA → ENVIA EMAIL */
+btnReset.onclick = async ()=>{
+  msg.textContent="";
+  const emailVal = email.value.trim();
+  if(!emailVal){
+    msg.textContent="Digite seu email para recuperar a senha";
+    msg.className="msg error";
+    return;
+  }
+  const { error } = await sb.auth.resetPasswordForEmail(emailVal,{
+    redirectTo: location.origin + "/reset.html"
+  });
+  if(error){
+    msg.textContent="Erro ao enviar e-mail";
+    msg.className="msg error";
+    return;
+  }
+  msg.textContent="📩 Enviamos um e-mail para redefinir sua senha";
+  msg.className="msg success";
 };
 
 /* PERFIL */

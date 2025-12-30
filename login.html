@@ -10,16 +10,19 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-/* ================= BASE ================= */
+/* ================= RESET / BLOQUEIOS ================= */
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
 html,body{
   margin:0;
+  width:100%;
   height:100%;
+  overflow:hidden;          /* ❌ REMOVE QUALQUER SCROLL */
   background:#0b0b0d;
   color:#fff;
-  overflow:hidden;
 }
-html{touch-action:manipulation}
+html{
+  touch-action:manipulation;
+}
 
 /* ================= THEME ================= */
 :root{
@@ -30,7 +33,7 @@ html{touch-action:manipulation}
   --input:#0f0f13;
 }
 
-/* ================= LAYOUT ================= */
+/* ================= BACKGROUND ================= */
 body{
   display:flex;
   align-items:center;
@@ -39,26 +42,27 @@ body{
     radial-gradient(80% 60% at 50% 20%, #1b1b20 0%, #0b0b0d 70%);
 }
 
+/* ================= CARD ================= */
 .card{
-  width:440px;
-  max-width:94%;
+  width:420px;
+  max-width:92%;
   background:linear-gradient(180deg,#16161b,#101013);
   border-radius:22px;
-  padding:44px 38px;
+  padding:40px 36px;
   box-shadow:0 40px 120px rgba(0,0,0,.9);
 }
 
-/* ================= HEADER ================= */
+/* ================= LOGO ================= */
 .logo{
   text-align:center;
   font-size:34px;
   font-weight:900;
-  margin-bottom:34px;
+  margin-bottom:30px;
 }
 .logo span{color:var(--accent)}
 
 /* ================= FORM ================= */
-.group{margin-bottom:18px}
+.group{margin-bottom:16px}
 label{
   font-size:13px;
   color:var(--muted);
@@ -92,20 +96,25 @@ input:focus{
 .btn-primary{
   background:var(--accent);
   color:#fff;
-  margin-top:8px;
+  margin-top:6px;
 }
 
-/* GOOGLE */
+/* ===== GOOGLE (SÓ O G) ===== */
 .google{
-  margin-top:18px;
-  text-align:center;
+  margin:16px auto 0;
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   cursor:pointer;
-  font-size:14px;
-  color:#e5e7eb;
+  font-size:22px;
+  font-weight:900;
+  user-select:none;
 }
 .google span{
-  font-weight:900;
-  font-size:18px;
   background:conic-gradient(
     #4285F4 0deg 90deg,
     #34A853 90deg 180deg,
@@ -120,7 +129,7 @@ input:focus{
 .footer{
   display:flex;
   justify-content:space-between;
-  margin-top:26px;
+  margin-top:22px;
   font-size:13px;
 }
 .footer a{
@@ -132,7 +141,7 @@ input:focus{
 
 /* ================= MSG ================= */
 .msg{
-  margin-top:16px;
+  margin-top:14px;
   min-height:18px;
   font-size:14px;
 }
@@ -147,8 +156,11 @@ input:focus{
   display:none;
   align-items:center;
   justify-content:center;
+  overflow:hidden; /* ❌ SEM SCROLL */
 }
-.modal .card{max-height:90vh;overflow:auto}
+.modal .card{
+  max-height:none; /* ❌ impede barra interna */
+}
 </style>
 </head>
 
@@ -170,7 +182,7 @@ input:focus{
   <button id="btnLogin" class="btn btn-primary">Entrar</button>
 
   <div id="btnGoogle" class="google">
-    Entrar com <span>G</span>oogle
+    <span>G</span>
   </div>
 
   <div class="footer">
@@ -222,8 +234,11 @@ input:focus{
 </div>
 
 <script>
-/* ===== ZOOM OFF ===== */
+/* ===== BLOQUEIA ZOOM TOTAL ===== */
 window.addEventListener("wheel",e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
+window.addEventListener("keydown",e=>{
+  if(e.ctrlKey && ["+","-","="].includes(e.key)) e.preventDefault();
+});
 
 /* ===== SUPABASE ===== */
 const sb = supabase.createClient(

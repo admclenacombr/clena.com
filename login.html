@@ -2,142 +2,175 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Login • CLENA TV</title>
+<title>Entrar • CLENA TV</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-*{box-sizing:border-box;font-family:Inter,Arial,sans-serif}
-html,body{margin:0;height:100%;background:#0f0f10;color:#fff}
-
-:root{
-  --surface:#1b1b1e;
-  --accent:#e50914;
-  --muted:#b5b5b5;
-  --border:#2b2b2b;
-  --error:#f87171;
-  --success:#22c55e;
+/* ================= RESET / BASE ================= */
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+html,body{
+  margin:0;
+  height:100%;
+  background:#0b0b0d;
+  color:#fff;
+  overflow:hidden;
 }
 
+/* BLOQUEIA ZOOM */
+html{
+  touch-action:manipulation;
+}
+
+/* ================= THEME ================= */
+:root{
+  --card:#141417;
+  --accent:#e50914;
+  --muted:#9ca3af;
+  --border:#232329;
+  --input:#0f0f13;
+}
+
+/* ================= LAYOUT ================= */
 body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background:radial-gradient(70% 60% at 50% 25%, #1a1a1a 0%, #0f0f10 60%);
+  background:
+    radial-gradient(80% 60% at 50% 20%, #1a1a1f 0%, #0b0b0d 70%);
 }
 
-.container{
+.card{
   width:420px;
   max-width:92%;
-  background:rgba(27,27,30,.9);
-  backdrop-filter:blur(14px);
-  padding:42px;
-  border-radius:20px;
-  box-shadow:0 40px 90px rgba(0,0,0,.7);
+  background:linear-gradient(180deg,#16161a,#111114);
+  border-radius:22px;
+  padding:42px 38px;
+  box-shadow:
+    0 40px 120px rgba(0,0,0,.85),
+    inset 0 1px 0 rgba(255,255,255,.03);
 }
 
-h1{
-  margin:0 0 26px;
-  font-size:36px;
-  font-weight:900;
+/* ================= HEADER ================= */
+.logo{
   text-align:center;
+  font-size:34px;
+  font-weight:900;
+  letter-spacing:.5px;
+  margin-bottom:34px;
 }
-h1 span{color:var(--accent)}
+.logo span{color:var(--accent)}
 
-.group{margin-bottom:16px}
-label{font-size:14px;color:var(--muted);margin-bottom:6px;display:block}
+/* ================= FORM ================= */
+.group{
+  margin-bottom:18px;
+}
+
+label{
+  font-size:13px;
+  color:var(--muted);
+  display:block;
+  margin-bottom:6px;
+}
 
 input{
   width:100%;
   padding:14px 16px;
-  font-size:15px;
   border-radius:12px;
   border:1px solid var(--border);
-  background:rgba(0,0,0,.45);
+  background:var(--input);
   color:#fff;
+  font-size:15px;
 }
-input:focus{outline:none;border-color:var(--accent)}
 
+input:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+
+/* ================= BUTTONS ================= */
 .btn{
   width:100%;
-  padding:16px;
-  margin-top:12px;
+  height:52px;
   border:none;
   border-radius:14px;
-  background:var(--accent);
-  color:#fff;
   font-size:16px;
   font-weight:800;
   cursor:pointer;
-  position:relative;
 }
 
-.btn.loading{
-  pointer-events:none;
-  opacity:.85;
+.btn-primary{
+  background:var(--accent);
+  color:#fff;
+  margin-top:8px;
 }
-.btn.loading::before{
-  content:"";
-  position:absolute;
-  width:22px;
-  height:22px;
-  border:3px solid rgba(255,255,255,.4);
-  border-top:3px solid #fff;
-  border-radius:50%;
-  animation:spin .8s linear infinite;
-  left:calc(50% - 11px);
-  top:calc(50% - 11px);
-}
-@keyframes spin{to{transform:rotate(360deg)}}
 
-/* Google (apenas ícone) */
-.btn-google{
-  background:#fff;
-  border:1px solid #ddd;
-  margin-top:10px;
+.btn-primary:hover{
+  filter:brightness(1.05);
+}
+
+/* GOOGLE INLINE */
+.google-inline{
+  margin-top:18px;
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
+  gap:6px;
+  color:#e5e7eb;
+  font-size:14px;
+  cursor:pointer;
+  user-select:none;
 }
-.btn-google svg{width:22px;height:22px}
 
-.links{
+.google-inline span.g{
+  font-weight:900;
+  font-size:18px;
+  background:conic-gradient(
+    #4285F4 0deg 90deg,
+    #34A853 90deg 180deg,
+    #FBBC05 180deg 270deg,
+    #EA4335 270deg 360deg
+  );
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+/* ================= FOOTER ================= */
+.footer{
   display:flex;
   justify-content:space-between;
-  margin-top:14px;
-  font-size:14px;
+  margin-top:26px;
+  font-size:13px;
 }
-.link{
-  text-decoration:underline;
+
+.footer a{
+  color:#c7c7cc;
+  text-decoration:none;
   cursor:pointer;
 }
 
-.msg{margin-top:14px;min-height:20px;font-size:14px}
-.msg.error{color:var(--error)}
-.msg.success{color:var(--success)}
+.footer a:hover{
+  text-decoration:underline;
+}
 
-.modal{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,.85);
-  display:none;
-  align-items:center;
-  justify-content:center;
+/* ================= MSG ================= */
+.msg{
+  margin-top:16px;
+  font-size:14px;
+  min-height:18px;
 }
-.modal-box{
-  width:420px;
-  max-width:92%;
-  background:var(--surface);
-  padding:36px;
-  border-radius:20px;
-}
+.msg.error{color:#f87171}
+.msg.success{color:#22c55e}
 </style>
 </head>
 
 <body>
 
-<div class="container">
-  <h1>CLENA <span>TV</span></h1>
+<div class="card">
+  <div class="logo">CLENA <span>TV</span></div>
 
   <div class="group">
     <label>Email</label>
@@ -149,117 +182,55 @@ input:focus{outline:none;border-color:var(--accent)}
     <input id="senha" type="password">
   </div>
 
-  <button id="btnLogin" class="btn">Entrar</button>
+  <button id="btnLogin" class="btn btn-primary">Entrar</button>
 
-  <!-- Google só com ícone -->
-  <button id="btnGoogle" class="btn btn-google" title="Entrar com Google">
-    <svg viewBox="0 0 48 48">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.01 1.53 7.39 2.81l5.46-5.46C33.42 3.69 28.99 1.5 24 1.5 14.73 1.5 6.91 7.98 3.99 16.63l6.35 4.93C11.82 14.3 17.4 9.5 24 9.5z"/>
-      <path fill="#4285F4" d="M46.5 24c0-1.64-.15-3.21-.43-4.73H24v9.02h12.7c-.55 2.96-2.21 5.47-4.7 7.16l7.25 5.63C43.52 36.82 46.5 30.92 46.5 24z"/>
-      <path fill="#FBBC05" d="M10.34 28.06c-.5-1.49-.78-3.09-.78-4.73s.28-3.24.78-4.73l-6.35-4.93C2.73 16.98 1.5 20.38 1.5 23.33s1.23 6.35 2.49 9.66l6.35-4.93z"/>
-      <path fill="#34A853" d="M24 45c6.48 0 11.92-2.14 15.9-5.81l-7.25-5.63c-2.01 1.35-4.58 2.14-8.65 2.14-6.6 0-12.18-4.8-14.16-11.16l-6.35 4.93C6.91 39.02 14.73 45 24 45z"/>
-    </svg>
-  </button>
+  <!-- GOOGLE PROFISSIONAL -->
+  <div id="btnGoogle" class="google-inline">
+    Entrar com <span class="g">G</span>oogle
+  </div>
 
-  <div class="links">
-    <div class="link" id="abrirCadastro">Criar conta</div>
-    <div class="link" id="btnReset">Esqueci a senha</div>
+  <div class="footer">
+    <a id="abrirCadastro">Criar conta</a>
+    <a id="btnReset">Esqueci a senha</a>
   </div>
 
   <div class="msg" id="msg"></div>
 </div>
 
-<!-- MODAL CADASTRO -->
-<div class="modal" id="modalCadastro">
-  <div class="modal-box">
-    <h2>Criar conta</h2>
-
-    <div class="group">
-      <label>Email</label>
-      <input id="c_email" type="email">
-    </div>
-
-    <div class="group">
-      <label>WhatsApp</label>
-      <input id="c_whatsapp" type="text" placeholder="(99) 99999-9999">
-    </div>
-
-    <div class="group">
-      <label>CPF</label>
-      <input id="c_cpf" type="text" placeholder="000.000.000-00">
-    </div>
-
-    <div class="group">
-      <label>Senha</label>
-      <input id="c_senha" type="password">
-    </div>
-
-    <div class="group">
-      <label>Confirmar senha</label>
-      <input id="c_confirma" type="password">
-    </div>
-
-    <button id="btnCadastro" class="btn">Cadastrar</button>
-    <div class="link" id="fecharCadastro">Cancelar</div>
-    <div class="msg" id="msgCadastro"></div>
-  </div>
-</div>
-
 <script>
+/* ===== BLOQUEIA ZOOM CTRL + SCROLL ===== */
+window.addEventListener("wheel",e=>{
+  if(e.ctrlKey)e.preventDefault();
+},{passive:false});
+
+/* ===== SUPABASE ===== */
 const sb = supabase.createClient(
   "https://dxkszikemntfusfyrzos.supabase.co",
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
-const btnLogin = document.getElementById("btnLogin");
-const btnGoogle = document.getElementById("btnGoogle");
-const btnCadastro = document.getElementById("btnCadastro");
-const btnReset = document.getElementById("btnReset");
-const modalCadastro = document.getElementById("modalCadastro");
-const msg = document.getElementById("msg");
-
-abrirCadastro.onclick = ()=> modalCadastro.style.display="flex";
-fecharCadastro.onclick = ()=> modalCadastro.style.display="none";
-
-function loading(btn,on){ btn.classList.toggle("loading",on); }
-
-/* MÁSCARAS */
-c_whatsapp.oninput = e=>{
-  e.target.value=e.target.value.replace(/\D/g,"")
-    .replace(/^(\d{2})(\d)/,"($1) $2")
-    .replace(/(\d{5})(\d)/,"$1-$2").slice(0,15);
-};
-c_cpf.oninput = e=>{
-  e.target.value=e.target.value.replace(/\D/g,"")
-    .replace(/(\d{3})(\d)/,"$1.$2")
-    .replace(/(\d{3})(\d)/,"$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/,"$1-$2").slice(0,14);
-};
-
-/* LOGIN EMAIL */
 btnLogin.onclick = async ()=>{
-  loading(btnLogin,true);
   msg.textContent="";
-  try{
-    const { data, error } = await sb.auth.signInWithPassword({
-      email: email.value.trim(),
-      password: senha.value
-    });
-    if(error){
-      msg.textContent = "Email ou senha inválidos";
-      msg.className = "msg error";
-      return;
-    }
-    if(!data.session){
-      msg.textContent = "Confirme seu e-mail para continuar";
-      msg.className = "msg error";
-      return;
-    }
-    await validarPerfil(data.user);
-  } finally{ loading(btnLogin,false); }
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: email.value.trim(),
+    password: senha.value
+  });
+
+  if(error){
+    msg.textContent="Email ou senha inválidos";
+    msg.className="msg error";
+    return;
+  }
+
+  if(!data.session){
+    msg.textContent="Confirme seu e-mail para continuar";
+    msg.className="msg error";
+    return;
+  }
+
+  location.replace("index.html");
 };
 
-/* LOGIN GOOGLE */
 btnGoogle.onclick = async ()=>{
   await sb.auth.signInWithOAuth({
     provider:"google",
@@ -267,90 +238,18 @@ btnGoogle.onclick = async ()=>{
   });
 };
 
-/* CADASTRO (envia link de confirmação automaticamente) */
-btnCadastro.onclick = async ()=>{
-  loading(btnCadastro,true);
-  msgCadastro.textContent="";
-  try{
-    if(!c_email.value || !c_whatsapp.value || !c_cpf.value){
-      msgCadastro.textContent="Preencha todos os campos";
-      msgCadastro.className="msg error";
-      return;
-    }
-    if(c_senha.value!==c_confirma.value){
-      msgCadastro.textContent="As senhas não conferem";
-      msgCadastro.className="msg error";
-      return;
-    }
-
-    const { data, error } = await sb.auth.signUp({
-      email:c_email.value.trim(),
-      password:c_senha.value
-    });
-    if(error){
-      msgCadastro.textContent = error.message;
-      msgCadastro.className="msg error";
-      return;
-    }
-
-    const trial=new Date(Date.now()+10*24*60*60*1000);
-
-    await sb.from("user").insert({
-      id:data.user.id,
-      email:data.user.email,
-      whatsapp:c_whatsapp.value.replace(/\D/g,""),
-      cpf:c_cpf.value.replace(/\D/g,""),
-      status:"pendente",
-      trial_expires_at:trial.toISOString()
-    });
-
-    msgCadastro.textContent = "Enviamos um e-mail para confirmar sua conta 📩";
-    msgCadastro.className="msg success";
-
-  } finally{ loading(btnCadastro,false); }
-};
-
-/* ESQUECI A SENHA → ENVIA EMAIL */
 btnReset.onclick = async ()=>{
-  msg.textContent="";
-  const emailVal = email.value.trim();
-  if(!emailVal){
+  if(!email.value){
     msg.textContent="Digite seu email para recuperar a senha";
     msg.className="msg error";
     return;
   }
-  const { error } = await sb.auth.resetPasswordForEmail(emailVal,{
+  await sb.auth.resetPasswordForEmail(email.value,{
     redirectTo: location.origin + "/reset.html"
   });
-  if(error){
-    msg.textContent="Erro ao enviar e-mail";
-    msg.className="msg error";
-    return;
-  }
-  msg.textContent="📩 Enviamos um e-mail para redefinir sua senha";
+  msg.textContent="Enviamos um email para redefinir sua senha";
   msg.className="msg success";
 };
-
-/* PERFIL */
-async function validarPerfil(user){
-  const { data:perfil } = await sb.from("user").select("*").eq("id",user.id).maybeSingle();
-  if(!perfil){
-    const trial=new Date(Date.now()+10*24*60*60*1000);
-    await sb.from("user").insert({
-      id:user.id,
-      email:user.email,
-      status:"pendente",
-      trial_expires_at:trial.toISOString()
-    });
-  }
-  location.replace("index.html");
-}
-
-/* RETORNO GOOGLE */
-(async()=>{
-  const { data:{session} } = await sb.auth.getSession();
-  if(session) await validarPerfil(session.user);
-})();
 </script>
 
 </body>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Clena TV • Ao Vivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="env.js"></script>
+
+<meta name="theme-color" content="#000">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:Inter,Arial}
+
+video{
+  width:100vw;
+  height:100vh;
+  object-fit:cover;
+  background:#000;
+}
+
+/* AO VIVO */
+#liveBadge{
+  position:fixed;
+  top:14px;
+  left:14px;
+  background:#e50914;
+  padding:6px 14px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+  z-index:10;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+#liveBadge::before{
+  content:"";
+  width:8px;
+  height:8px;
+  background:#fff;
+  border-radius:50%;
+  animation:pulse 1.2s infinite;
+}
+@keyframes pulse{
+  0%{opacity:1}
+  50%{opacity:.4}
+  100%{opacity:1}
+}
+
+/* FALLBACK */
+#fallback{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:20;
+}
+#fallback button{
+  padding:16px 28px;
+  font-size:16px;
+  font-weight:700;
+  border:none;
+  border-radius:8px;
+  background:#e50914;
+  color:#fff;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div id="liveBadge">AO VIVO</div>
+
+<div id="fallback">
+  <button onclick="iniciarManual()">▶ Iniciar transmissão</button>
+</div>
+
+<video
+  id="video"
+  autoplay
+  muted
+  playsinline
+  preload="auto"
+></video>
+
+<script>
+/* ================= CONFIG ================= */
+const sb = supabase.createClient(
+  window.ENV.SUPABASE_URL,
+  window.ENV.SUPABASE_ANON_KEY
+);
+
+const video = document.getElementById("video");
+const fallback = document.getElementById("fallback");
+
+const canalSlug =
+  new URLSearchParams(location.search).get("canal") || "clena-series";
+
+video.controls = false;
+video.disablePictureInPicture = true;
+video.controlsList = "nodownload noplaybackrate nofullscreen";
+
+let playlist = [];
+let indice = 0;
+
+/* ================= PLAYLIST ================= */
+async function carregarPlaylist(){
+  console.log("🔎 Buscando canal:", canalSlug);
+
+  const { data: canal, error: canalErr } = await sb
+    .from("canais")
+    .select("id")
+    .eq("slug", canalSlug)
+    .single();
+
+  if(canalErr || !canal){
+    console.error("❌ Canal não encontrado");
+    return;
+  }
+
+  console.log("✅ Canal OK:", canal.id);
+
+  const { data, error } = await sb
+    .from("canal_playlist")
+    .select("ordem, filmes(*)")
+    .eq("canal_id", canal.id)
+    .eq("ativo", true)
+    .order("ordem");
+
+  if(error){
+    console.error("❌ Erro playlist", error);
+    return;
+  }
+
+  playlist = data || [];
+  console.log("📺 Playlist carregada:", playlist);
+}
+
+/* ================= PLAYER ================= */
+async function tocarAtual(){
+  if(!playlist.length){
+    console.warn("⚠️ Playlist vazia");
+    return;
+  }
+
+  const item = playlist[indice].filmes;
+  console.log("▶ Tocando:", item.titulo, item.video_url);
+
+  video.pause();
+  video.src = item.video_url;
+  video.load();
+
+  try{
+    await video.play();
+    setTimeout(()=>{
+      video.muted = false;
+      video.volume = 1;
+    },300);
+  }catch(e){
+    console.warn("🚫 Autoplay bloqueado, exibindo fallback");
+    fallback.style.display = "flex";
+  }
+}
+
+/* ================= FALLBACK ================= */
+async function iniciarManual(){
+  fallback.style.display = "none";
+  video.muted = false;
+  await video.play();
+}
+
+/* ================= PRÓXIMO ================= */
+video.addEventListener("ended", ()=>{
+  indice++;
+  if(indice >= playlist.length) indice = 0;
+  tocarAtual();
+});
+
+/* ================= START ================= */
+(async ()=>{
+  await carregarPlaylist();
+  await tocarAtual();
+})();
+</script>
+
+</body>
+</html>

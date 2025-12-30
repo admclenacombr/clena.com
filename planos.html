@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<!-- Google tag (GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T97MS35TJ6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-T97MS35TJ6', {
+    page_title: 'Player',
+    page_location: location.href,
+    debug_mode: true
+  });
+</script>
+<title>Planos CLENA TV</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Arial,sans-serif}
+
+:root{
+  --bg:#0f0f10;
+  --surface:#1b1b1e;
+  --card:#232326;
+  --accent:#e50914;
+  --text:#fff;
+  --muted:#b5b5b5;
+  --success:#22c55e;
+}
+
+body{
+  min-height:100vh;
+  background:radial-gradient(80% 60% at 50% 10%, #1a1a1a 0%, #0f0f10 65%);
+  color:var(--text);
+}
+
+/* HEADER */
+header{
+  position:fixed;
+  top:0;left:0;right:0;
+  height:64px;
+  display:flex;
+  align-items:center;
+  padding:0 40px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.9),rgba(0,0,0,.4),transparent);
+  z-index:100;
+}
+.logo{
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:1px;
+}
+.logo span{color:var(--accent)}
+.back{
+  margin-left:auto;
+  cursor:pointer;
+  font-size:14px;
+  color:#ccc;
+}
+.back:hover{color:#fff}
+
+/* CONTAINER */
+.container{
+  max-width:1100px;
+  margin:110px auto 80px;
+  padding:0 20px;
+  text-align:center;
+}
+.container h1{
+  font-size:42px;
+  margin-bottom:8px;
+}
+.container p{
+  color:var(--muted);
+  margin-bottom:50px;
+}
+
+/* GRID */
+.planos{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:28px;
+}
+
+/* CARD */
+.plano{
+  background:linear-gradient(180deg,#232326,#1a1a1c);
+  border-radius:22px;
+  padding:34px 26px;
+  box-shadow:0 30px 60px rgba(0,0,0,.65);
+  transition:.35s;
+  position:relative;
+  overflow:hidden;
+}
+.plano::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(60% 40% at top, rgba(229,9,20,.35), transparent 60%);
+  opacity:.4;
+  pointer-events:none;
+}
+
+.plano h2{
+  font-size:26px;
+  margin-bottom:8px;
+}
+.preco{
+  font-size:46px;
+  font-weight:900;
+  margin:18px 0;
+}
+.preco span{
+  font-size:18px;
+  color:var(--muted);
+}
+.duracao{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:22px;
+}
+
+.beneficios{
+  text-align:left;
+  margin-bottom:28px;
+}
+.beneficios li{
+  list-style:none;
+  margin-bottom:10px;
+  font-size:14px;
+}
+.beneficios li::before{
+  content:"✓";
+  color:var(--success);
+  margin-right:8px;
+  font-weight:900;
+}
+
+/* BOTÃO */
+.btn{
+  position:relative;
+  z-index:5;
+  width:100%;
+  padding:16px;
+  border:none;
+  border-radius:14px;
+  background:var(--accent);
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+}
+.btn:hover{filter:brightness(1.1)}
+
+/* DESTAQUE */
+.popular{
+  position:absolute;
+  top:16px;
+  right:-42px;
+  transform:rotate(45deg);
+  background:var(--accent);
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+  padding:6px 50px;
+}
+
+/* FOOTER */
+.footer{
+  margin-top:60px;
+  font-size:13px;
+  color:#777;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+  header{padding:0 16px}
+  .container h1{font-size:30px}
+  .preco{font-size:38px}
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+  <div class="logo">CLENA <span>TV</span></div>
+  <div class="back" onclick="voltar()">← Voltar</div>
+</header>
+
+<div class="container">
+  <h1>Escolha seu plano</h1>
+  <p>Ative agora e aproveite todo o conteúdo sem limites 🚀</p>
+
+  <div class="planos">
+    <!-- planos dinâmicos -->
+  </div>
+
+  <div class="footer">
+    Pagamento seguro • Ativação automática após confirmação
+  </div>
+</div>
+
+<script>
+function voltar(){
+  location.href = "index.html";
+}
+
+/* CARREGA PLANOS DA API (compatível com get-planos atual) */
+async function carregarPlanos(){
+  try{
+    const res = await fetch(
+      "https://www.clena.com.br/api/get-planos",
+      { cache: "no-store" }
+    );
+
+    const planos = await res.json();
+
+    const container = document.querySelector(".planos");
+    container.innerHTML = "";
+
+    if(!Array.isArray(planos) || planos.length === 0){
+      container.innerHTML =
+        "<p style='color:#777'>Nenhum plano disponível</p>";
+      return;
+    }
+
+    planos.forEach((plano, index) => {
+      const card = document.createElement("div");
+      card.className = "plano";
+
+      card.innerHTML = `
+        ${index === 1 ? `<div class="popular">MAIS VENDIDO</div>` : ""}
+        <h2>${plano.nome}</h2>
+
+        <div class="preco">
+          R$ ${Number(plano.valor).toFixed(2).replace(".", ",")}
+          <span>/ mês</span>
+        </div>
+
+        <div class="duracao">Acesso mensal</div>
+
+        <ul class="beneficios">
+          <li>Acesso completo</li>
+          <li>Conteúdo exclusivo</li>
+          <li>Qualidade máxima</li>
+        </ul>
+
+        <button class="btn" onclick="assinar('${plano.nome}')">
+          Assinar agora
+        </button>
+      `;
+
+      container.appendChild(card);
+    });
+
+  }catch(e){
+    alert("Erro ao carregar planos");
+    console.error(e);
+  }
+}
+
+
+carregarPlanos();
+/* INICIAR PAGAMENTO (compatível com create-payment atual) */
+async function assinar(plano){
+  const email = localStorage.getItem("usuario_email");
+
+  if(!email){
+    localStorage.setItem("redirect_after_login", "planos.html");
+    alert("Faça login para continuar");
+    location.href = "login.html";
+    return;
+  }
+
+  try{
+    const res = await fetch(
+      "https://www.clena.com.br/api/create-payment",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        credentials: "same-origin",
+        body: JSON.stringify({
+          action: "assinatura",   // 🔥 alinhado com backend
+          plano: plano,
+          email: email
+        })
+      }
+    );
+
+    const data = await res.json();
+    console.log("RETORNO CREATE PAYMENT:", data);
+
+    if(data?.url){
+      window.location.href = data.url;
+      return;
+    }
+
+    alert("Erro ao iniciar pagamento");
+    console.error(data);
+
+  }catch(e){
+    alert("Falha de conexão");
+    console.error(e);
+  }
+}
+
+
+</script>
+
+
+</body>
+</html>

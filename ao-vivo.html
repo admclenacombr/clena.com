@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>CLENA TV • AO VIVO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="env.js"></script>
+
+<meta name="theme-color" content="#000">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#000;
+  color:#fff;
+  font-family:Inter,Arial,sans-serif;
+}
+
+/* HEADER */
+header{
+  height:56px;
+  display:flex;
+  align-items:center;
+  padding:0 20px;
+  background:#000;
+  border-bottom:1px solid #111;
+}
+header strong{
+  font-size:18px;
+  letter-spacing:.5px;
+}
+.badge{
+  margin-left:12px;
+  padding:4px 12px;
+  background:#e50914;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.badge::before{
+  content:"";
+  width:8px;
+  height:8px;
+  background:#fff;
+  border-radius:50%;
+  animation:pulse 1.2s infinite;
+}
+@keyframes pulse{
+  0%{opacity:1}
+  50%{opacity:.4}
+  100%{opacity:1}
+}
+
+/* PLAYER */
+#tv{
+  width:100%;
+  height:68vh;
+  background:#000;
+}
+video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  background:#000;
+}
+
+/* AGORA */
+#agora{
+  padding:14px 20px;
+  background:#0f0f10;
+  border-bottom:1px solid #111;
+}
+#agora h2{
+  font-size:18px;
+  margin-bottom:4px;
+}
+#agora span{
+  font-size:13px;
+  color:#aaa;
+}
+
+/* GRADE */
+#grade{
+  padding:20px;
+}
+#grade h3{
+  font-size:14px;
+  color:#ccc;
+  margin-bottom:12px;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+}
+.item{
+  display:flex;
+  gap:10px;
+  padding:8px 0;
+  border-bottom:1px solid #1a1a1a;
+  font-size:14px;
+  color:#aaa;
+}
+.item.ativo{
+  color:#fff;
+  font-weight:600;
+}
+
+@media(max-width:768px){
+  #tv{height:55vh}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <strong>CLENA TV</strong>
+  <div class="badge">AO VIVO</div>
+</header>
+
+<!-- PLAYER -->
+<div id="tv">
+  <video
+    id="video"
+    autoplay
+    muted
+    playsinline
+    preload="auto"
+  ></video>
+</div>
+
+<!-- AGORA -->
+<div id="agora">
+  <h2 id="titulo">Carregando…</h2>
+  <span id="meta"></span>
+</div>
+
+<!-- GRADE -->
+<div id="grade">
+  <h3>Programação</h3>
+  <div id="lista"></div>
+</div>
+
+<script>
+/* ================= SUPABASE ================= */
+const sb = supabase.createClient(
+  window.ENV.SUPABASE_URL,
+  window.ENV.SUPABASE_ANON_KEY
+);
+
+/* ================= ELEMENTOS ================= */
+const video  = document.getElementById("video");
+const titulo = document.getElementById("titulo");
+const meta   = document.getElementById("meta");
+const lista  = document.getElementById("lista");
+
+video.controls = false;
+video.disablePictureInPicture = true;
+video.controlsList = "nodownload noplaybackrate nofullscreen";
+
+/* ================= STATE ================= */
+let programacao = [];
+let indexAtual  = 0;
+
+/* ================= HELPERS ================= */
+function isBunnyId(v){
+  return /^[a-f0-9-]{20,}$/i.test(v);
+}
+function bunnyToHls(id){
+  return `https://vz-827c2cae-692.b-cdn.net/${id}/playlist.m3u8`;
+}
+
+/* ================= CARREGAR PROGRAMAÇÃO ================= */
+async function carregarProgramacao(){
+  const { data, error } = await sb
+    .from("programacao")
+    .select("inicio, filmes(*)")
+    .order("inicio", { ascending:true });
+
+  if(error || !data){
+    console.error("Erro ao carregar programação", error);
+    return;
+  }
+
+  programacao = data;
+
+  // AGORA EM UTC (IMPORTANTE)
+  const agora = new Date(new Date().toISOString());
+
+  indexAtual = programacao.findIndex((p,i)=>{
+    const ini = new Date(p.inicio);
+    const prox = programacao[i+1]
+      ? new Date(programacao[i+1].inicio)
+      : null;
+
+    return ini <= agora && (!prox || agora < prox);
+  });
+
+  // FALLBACK SE NÃO ACHOU
+  if(indexAtual === -1){
+    indexAtual = agora < new Date(programacao[0].inicio)
+      ? 0
+      : programacao.length - 1;
+  }
+}
+
+/* ================= PLAYER ================= */
+function tocarAtual(){
+  if(!programacao.length) return;
+
+  const item = programacao[indexAtual].filmes;
+
+  let src = item.video_url;
+  if(isBunnyId(src)){
+    src = bunnyToHls(src);
+  }
+
+  video.pause();
+  video.src = src;
+  video.load();
+
+  video.onloadedmetadata = ()=>{
+    video.play().catch(()=>{});
+    setTimeout(()=>{
+      video.muted = false;
+      video.volume = 1;
+    },300);
+  };
+
+  titulo.textContent = item.titulo || item.serie_nome || "Ao vivo";
+
+  meta.textContent =
+    item.tipo === "serie"
+      ? `${item.serie_nome} • T${item.temporada} Ep ${item.episodio}`
+      : item.categoria || "";
+
+  renderGrade();
+}
+
+/* ================= LOOP ================= */
+video.addEventListener("ended", ()=>{
+  indexAtual++;
+  if(indexAtual >= programacao.length){
+    indexAtual = 0;
+  }
+  tocarAtual();
+});
+
+/* ================= GRADE ================= */
+function renderGrade(){
+  lista.innerHTML = "";
+
+  programacao.slice(indexAtual, indexAtual + 6).forEach((p,i)=>{
+    lista.innerHTML += `
+      <div class="item ${i===0?'ativo':''}">
+        ${p.filmes.titulo || p.filmes.serie_nome}
+      </div>
+    `;
+  });
+}
+
+/* ================= START ================= */
+(async ()=>{
+  await carregarProgramacao();
+  tocarAtual();
+})();
+</script>
+
+</body>
+</html>

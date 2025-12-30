@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+
+<!-- 🚫 BLOQUEIA QUALQUER ZOOM -->
+<meta name="viewport"
+  content="width=device-width,
+           initial-scale=1.0,
+           maximum-scale=1.0,
+           user-scalable=no">
+
+<title>Filtros • Clena TV</title>
+
+  
+<style>
+:root{
+  --bg:#0f0f10;
+  --card:#1c1c1f;
+  --border:#2a2a2e;
+  --accent:#e50914;
+  --text:#fff;
+  --muted:#9ca3af;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body{
+  margin:0;
+  padding:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,Arial,sans-serif;
+
+  /* 🚫 ZOOM TOTAL */
+  touch-action: manipulation;
+  -webkit-text-size-adjust:100%;
+  overscroll-behavior:contain;
+}
+
+.box{
+  max-width:900px;
+  margin:0 auto;
+  padding:26px;
+}
+
+h2{
+  margin:0 0 22px;
+  font-size:24px;
+  font-weight:900;
+}
+
+/* ===== SEÇÕES ===== */
+.filtro{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px;
+  margin-bottom:18px;
+}
+
+.filtro label{
+  display:block;
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:10px;
+  font-weight:600;
+}
+
+/* ===== INPUT TEXTO ===== */
+input[type="text"]{
+  width:100%;
+  padding:14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#111;
+  color:#fff;
+  font-size:16px; /* 👈 evita zoom no iOS */
+  outline:none;
+}
+
+/* ===== RANGE ===== */
+.range-box{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+input[type="range"]{
+  flex:1;
+}
+
+.range-value{
+  font-size:13px;
+  font-weight:800;
+  min-width:110px;
+  text-align:right;
+}
+
+/* ===== SCROLL HORIZONTAL ===== */
+.horizontal{
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  padding-bottom:4px;
+  scrollbar-width:none;
+}
+.horizontal::-webkit-scrollbar{display:none}
+
+.horizontal label{
+  display:flex;
+  align-items:center;
+  background:#111;
+  border:1px solid var(--border);
+  border-radius:999px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.horizontal input{
+  display:none;
+}
+
+.horizontal span{
+  padding:10px 16px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+  transition:.2s;
+}
+
+.horizontal input:checked + span{
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--accent);
+}
+
+/* ===== BOTÕES ===== */
+.actions{
+  display:flex;
+  gap:14px;
+  margin-top:26px;
+}
+
+button{
+  flex:1;
+  padding:16px;
+  border:none;
+  border-radius:14px;
+  font-size:15px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.aplicar{
+  background:var(--accent);
+  color:#fff;
+}
+.limpar{
+  background:#2a2a2e;
+  color:#fff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>🎛️ Filtros avançados</h2>
+
+  <!-- 🔍 BUSCA -->
+  <div class="filtro">
+    <label>Buscar por nome</label>
+    <input id="busca" type="text" placeholder="Filme ou série">
+  </div>
+
+  <!-- 🎚 CLASSIFICAÇÃO -->
+  <div class="filtro">
+    <label>Classificação indicativa (máxima)</label>
+    <div class="range-box">
+      <input id="classificacao" type="range" min="0" max="18">
+      <div class="range-value" id="classValue"></div>
+    </div>
+  </div>
+
+  <!-- 📆 ANOS -->
+  <div class="filtro">
+    <label>Ano de lançamento</label>
+    <div class="horizontal" id="anos"></div>
+  </div>
+
+  <!-- 🎭 GÊNEROS -->
+  <div class="filtro">
+    <label>Gêneros</label>
+    <div class="horizontal" id="generos"></div>
+  </div>
+
+  <!-- 🎬 TIPO -->
+  <div class="filtro">
+    <label>Tipo</label>
+    <div class="horizontal">
+      <label><input type="checkbox" value="filme"><span>Filme</span></label>
+      <label><input type="checkbox" value="serie"><span>Série</span></label>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="limpar" onclick="limpar()">Limpar</button>
+    <button class="aplicar" onclick="aplicar()">Aplicar filtros</button>
+  </div>
+</div>
+
+<script>
+/* ===== ESTADO RECEBIDO DO INDEX ===== */
+let dados = [];
+let filtrosSalvos = {};
+
+/* ===== ELEMENTOS DOM ===== */
+const busca = document.getElementById("busca");
+const range = document.getElementById("classificacao");
+const classValue = document.getElementById("classValue");
+window.addEventListener("message", (event) => {
+  if (!event.data || event.data.type !== "INIT_FILTROS") return;
+
+  dados = event.data.dados || [];
+  filtrosSalvos = event.data.filtros || {};
+
+  inicializarFiltros();
+});
+
+
+
+
+  
+function inicializarFiltros(){
+  // ANOS
+  const anosUnicos = [...new Set(
+    dados.map(d => d.ano_lancamento).filter(Boolean)
+  )].sort((a,b)=>b-a);
+
+  document.getElementById("anos").innerHTML =
+    anosUnicos.map(a => `
+      <label>
+        <input type="checkbox" value="${a}">
+        <span>${a}</span>
+      </label>
+    `).join("");
+
+  // GÊNEROS
+  const generosUnicos = [...new Set(
+    dados.flatMap(d =>
+      (d.categoria || "")
+        .split(",")
+        .map(g => g.trim())
+    )
+  )].filter(Boolean);
+
+  document.getElementById("generos").innerHTML =
+    generosUnicos.map(g => `
+      <label>
+        <input type="checkbox" value="${g}">
+        <span>${g}</span>
+      </label>
+    `).join("");
+
+  // RESTAURA
+  busca.value = filtrosSalvos.busca || "";
+
+range.value = filtrosSalvos.classificacao ?? 18;
+classValue.textContent = `Até ${range.value} anos`;
+
+range.oninput = () => {
+  classValue.textContent = `Até ${range.value} anos`;
+};
+
+
+  document.querySelectorAll("#anos input").forEach(i=>{
+    if (filtrosSalvos.anos?.includes(i.value)) i.checked = true;
+  });
+
+  document.querySelectorAll("#generos input").forEach(i=>{
+    if (filtrosSalvos.generos?.includes(i.value)) i.checked = true;
+  });
+
+  document
+    .querySelectorAll("input[value='filme'], input[value='serie']")
+    .forEach(i=>{
+      if (filtrosSalvos.tipos?.includes(i.value)) i.checked = true;
+    });
+}
+/* ===== AÇÕES ===== */
+function aplicar(){
+  const filtros = {
+    busca: busca.value.trim().toLowerCase(),
+    classificacao: Number(range.value),
+    anos: [...document.querySelectorAll("#anos input:checked")].map(i => i.value),
+    generos: [...document.querySelectorAll("#generos input:checked")].map(i => i.value),
+    tipos: [...document.querySelectorAll("input[value='filme'], input[value='serie']")]
+      .filter(i => i.checked)
+      .map(i => i.value)
+  };
+
+  // salva filtros
+  localStorage.setItem("clena_filtros", JSON.stringify(filtros));
+
+  // avisa o index
+  window.parent.postMessage("filtros_aplicados", "*");
+
+  // fecha popup
+  if (window.parent) {
+    window.parent.document.body.classList.remove("modal-open");
+    const overlay = window.parent.document.getElementById("filtrosOverlay");
+    if (overlay) overlay.style.display = "none";
+  }
+}
+
+function limpar(){
+  localStorage.removeItem("clena_filtros");
+
+  // limpa UI
+  busca.value = "";
+  range.value = 18;
+  classValue.textContent = "Até 18 anos";
+
+  document
+    .querySelectorAll("input[type='checkbox']")
+    .forEach(i => i.checked = false);
+
+  window.parent.postMessage("filtros_aplicados", "*");
+}
+
+</script>
+
+</body>
+</html>

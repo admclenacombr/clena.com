@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Redefinir senha • CLENA TV</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box;font-family:Inter,Arial,sans-serif}
+html,body{margin:0;height:100%;background:#0f0f10;color:#fff}
+
+:root{
+  --surface:#1b1b1e;
+  --accent:#e50914;
+  --muted:#b5b5b5;
+  --border:#2b2b2b;
+  --error:#f87171;
+  --success:#22c55e;
+}
+
+body{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:radial-gradient(70% 60% at 50% 25%, #1a1a1a 0%, #0f0f10 60%);
+}
+
+.container{
+  width:420px;
+  max-width:92%;
+  background:rgba(27,27,30,.9);
+  padding:42px;
+  border-radius:20px;
+  box-shadow:0 40px 90px rgba(0,0,0,.7);
+}
+
+h1{
+  margin:0 0 26px;
+  font-size:32px;
+  font-weight:900;
+  text-align:center;
+}
+
+.group{margin-bottom:16px}
+label{font-size:14px;color:var(--muted);margin-bottom:6px;display:block}
+
+input{
+  width:100%;
+  padding:14px 16px;
+  font-size:15px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.45);
+  color:#fff;
+}
+input:focus{outline:none;border-color:var(--accent)}
+
+.btn{
+  width:100%;
+  padding:16px;
+  margin-top:14px;
+  border:none;
+  border-radius:14px;
+  background:var(--accent);
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.btn.loading{
+  pointer-events:none;
+  opacity:.85;
+}
+.btn.loading::before{
+  content:"";
+  position:absolute;
+  width:22px;
+  height:22px;
+  border:3px solid rgba(255,255,255,.4);
+  border-top:3px solid #fff;
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+  left:calc(50% - 11px);
+  top:calc(50% - 11px);
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.msg{margin-top:14px;min-height:20px;font-size:14px}
+.msg.error{color:var(--error)}
+.msg.success{color:var(--success)}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Redefinir senha</h1>
+
+  <div class="group">
+    <label>Nova senha</label>
+    <input id="senha" type="password">
+  </div>
+
+  <div class="group">
+    <label>Confirmar senha</label>
+    <input id="confirma" type="password">
+  </div>
+
+  <button id="btnSalvar" class="btn">Salvar nova senha</button>
+
+  <div class="msg" id="msg"></div>
+</div>
+
+<script>
+const sb = supabase.createClient(
+  "https://dxkszikemntfusfyrzos.supabase.co",
+  "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
+);
+
+const btnSalvar = document.getElementById("btnSalvar");
+const msg = document.getElementById("msg");
+
+function loading(btn,on){
+  btn.classList.toggle("loading",on);
+}
+
+/*
+  Quando o usuário clica no link do e-mail,
+  o Supabase já cria uma sessão temporária.
+  Basta chamar updateUser().
+*/
+
+btnSalvar.onclick = async ()=>{
+  loading(btnSalvar,true);
+  msg.textContent="";
+  msg.className="msg";
+
+  try{
+    if(senha.value !== confirma.value){
+      msg.textContent = "As senhas não conferem";
+      msg.className = "msg error";
+      return;
+    }
+
+    if(senha.value.length < 6){
+      msg.textContent = "A senha deve ter no mínimo 6 caracteres";
+      msg.className = "msg error";
+      return;
+    }
+
+    const { error } = await sb.auth.updateUser({
+      password: senha.value
+    });
+
+    if(error){
+      msg.textContent = error.message;
+      msg.className = "msg error";
+      return;
+    }
+
+    msg.textContent = "Senha redefinida com sucesso! Redirecionando...";
+    msg.className = "msg success";
+
+    setTimeout(()=>{
+      location.replace("login.html");
+    },2000);
+
+  } finally{
+    loading(btnSalvar,false);
+  }
+};
+</script>
+
+</body>
+</html>

@@ -16,13 +16,11 @@ html,body{
   margin:0;
   width:100%;
   height:100%;
-  overflow:hidden;          /* ❌ REMOVE QUALQUER SCROLL */
+  overflow:hidden;               /* ❌ SEM SCROLL */
   background:#0b0b0d;
   color:#fff;
 }
-html{
-  touch-action:manipulation;
-}
+html{touch-action:manipulation}
 
 /* ================= THEME ================= */
 :root{
@@ -99,30 +97,27 @@ input:focus{
   margin-top:6px;
 }
 
-/* ===== GOOGLE (SÓ O G) ===== */
-.google{
+/* ===== GOOGLE ICON ===== */
+.google-btn{
   margin:16px auto 0;
   width:52px;
   height:52px;
   border-radius:50%;
-  background:transparent;   /* 🔥 REMOVE FUNDO */
+  background:#0f0f13;
+  border:1px solid #242428;
   display:flex;
   align-items:center;
   justify-content:center;
   cursor:pointer;
-  font-size:22px;
-  font-weight:900;
+  transition:.2s;
 }
-
-.google span{
-  background:conic-gradient(
-    #4285F4 0deg 90deg,
-    #34A853 90deg 180deg,
-    #FBBC05 180deg 270deg,
-    #EA4335 270deg 360deg
-  );
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+.google-btn:hover{
+  background:#18181d;
+  transform:scale(1.05);
+}
+.google-btn img{
+  width:22px;
+  height:22px;
 }
 
 /* ================= FOOTER ================= */
@@ -156,10 +151,6 @@ input:focus{
   display:none;
   align-items:center;
   justify-content:center;
-  overflow:hidden; /* ❌ SEM SCROLL */
-}
-.modal .card{
-  max-height:none; /* ❌ impede barra interna */
 }
 </style>
 </head>
@@ -181,8 +172,9 @@ input:focus{
 
   <button id="btnLogin" class="btn btn-primary">Entrar</button>
 
-  <div id="btnGoogle" class="google">
-    <span>G</span>
+  <!-- GOOGLE -->
+  <div id="btnGoogle" class="google-btn">
+    <img src="google.png" alt="Google">
   </div>
 
   <div class="footer">
@@ -234,7 +226,7 @@ input:focus{
 </div>
 
 <script>
-/* ===== BLOQUEIA ZOOM TOTAL ===== */
+/* ===== BLOQUEIA ZOOM ===== */
 window.addEventListener("wheel",e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
 window.addEventListener("keydown",e=>{
   if(e.ctrlKey && ["+","-","="].includes(e.key)) e.preventDefault();
@@ -246,44 +238,51 @@ const sb = supabase.createClient(
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
-/* ===== LOGIN ===== */
+/* ===== LOGIN EMAIL ===== */
 btnLogin.onclick = async ()=>{
   msg.textContent="";
   const { data, error } = await sb.auth.signInWithPassword({
     email: email.value.trim(),
     password: senha.value
   });
+
   if(error){
     msg.textContent="Email ou senha inválidos";
     msg.className="msg error";
     return;
   }
+
   if(!data.session){
     msg.textContent="Confirme seu e-mail para continuar";
     msg.className="msg error";
     return;
   }
+
   location.replace("index.html");
 };
 
-/* ===== GOOGLE ===== */
+/* ===== GOOGLE LOGIN ===== */
 btnGoogle.onclick = async ()=>{
   await sb.auth.signInWithOAuth({
     provider:"google",
-    options:{ redirectTo: location.origin + "/login.html" }
+    options:{
+      redirectTo: location.origin + "/login.html"
+    }
   });
 };
 
-/* ===== RESET ===== */
+/* ===== RESET SENHA ===== */
 btnReset.onclick = async ()=>{
   if(!email.value){
     msg.textContent="Digite seu email";
     msg.className="msg error";
     return;
   }
+
   await sb.auth.resetPasswordForEmail(email.value,{
     redirectTo: location.origin + "/login.html"
   });
+
   msg.textContent="Email de recuperação enviado";
   msg.className="msg success";
 };
@@ -295,6 +294,7 @@ fecharCadastro.onclick=()=>modal.style.display="none";
 /* ===== CADASTRO ===== */
 btnCadastro.onclick = async ()=>{
   msgCadastro.textContent="";
+
   if(c_senha.value!==c_confirma.value){
     msgCadastro.textContent="Senhas não conferem";
     msgCadastro.className="msg error";

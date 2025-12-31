@@ -85,11 +85,64 @@ input:focus{outline:none;border-color:var(--accent)}
 .msg.error{color:#f87171}
 .msg.success{color:#22c55e}
 
+/* ================= CHECKBOX PRIVACIDADE ================= */
+.privacidade-box{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin-top:10px;
+  font-size:13px;
+  color:#c7c7cc;
+}
+.privacidade-box input{
+  width:auto;
+  margin-top:3px;
+}
+.privacidade-box a{
+  color:#3ea6ff;
+  cursor:pointer;
+  text-decoration:none;
+}
+.privacidade-box a:hover{text-decoration:underline}
+
 /* ================= MODAIS ================= */
 .modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.85);
-  display:none;align-items:center;justify-content:center;
-  z-index:9999
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+
+/* ================= PRIVACIDADE POPUP ================= */
+.privacidade-popup{
+  width:720px;
+  max-width:94%;
+  height:80vh;
+  background:#0f0f10;
+  border-radius:18px;
+  overflow:hidden;
+  position:relative;
+  box-shadow:0 40px 120px rgba(0,0,0,.9);
+}
+.privacidade-popup iframe{
+  width:100%;
+  height:100%;
+  border:none;
+}
+.privacidade-fechar{
+  position:absolute;
+  top:10px;
+  right:10px;
+  background:#222;
+  color:#fff;
+  border:none;
+  border-radius:50%;
+  width:32px;
+  height:32px;
+  cursor:pointer;
 }
 
 /* ================= SESSÕES ================= */
@@ -146,14 +199,33 @@ input:focus{outline:none;border-color:var(--accent)}
 <div class="modal" id="modalCadastro">
   <div class="card">
     <h2>Criar conta</h2>
+
     <div class="group"><label>Email</label><input id="c_email"></div>
     <div class="group"><label>CPF</label><input id="c_cpf"></div>
     <div class="group"><label>WhatsApp</label><input id="c_whats"></div>
     <div class="group"><label>Senha</label><input id="c_senha" type="password"></div>
     <div class="group"><label>Confirmar senha</label><input id="c_confirma" type="password"></div>
+
+    <!-- 🔐 PRIVACIDADE -->
+    <div class="privacidade-box">
+      <input type="checkbox" id="aceitePrivacidade">
+      <label for="aceitePrivacidade">
+        Aceito as <a onclick="abrirPrivacidade()">Políticas de Privacidade</a>
+      </label>
+    </div>
+
     <button id="btnCadastro" class="btn btn-primary">Cadastrar</button>
+
     <div class="footer"><a id="fecharCadastro">Cancelar</a></div>
     <div class="msg" id="msgCadastro"></div>
+  </div>
+</div>
+
+<!-- ================= PRIVACIDADE ================= -->
+<div class="modal" id="modalPrivacidade">
+  <div class="privacidade-popup">
+    <button class="privacidade-fechar" onclick="fecharPrivacidade()">✕</button>
+    <iframe src="privacidade.html"></iframe>
   </div>
 </div>
 
@@ -172,46 +244,43 @@ const sb = supabase.createClient(
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
-/* ========= LOGIN ========= */
-btnLogin.onclick = async ()=>{
-  msg.textContent="";
-  const { data, error } = await sb.auth.signInWithPassword({
-    email: email.value.trim(),
-    password: senha.value
-  });
-  if(error){ msg.textContent="Login inválido"; msg.className="msg error"; return; }
-  controlarSessoes(data.user);
-};
+/* ===== PRIVACIDADE ===== */
+function abrirPrivacidade(){
+  modalPrivacidade.style.display="flex";
+}
+function fecharPrivacidade(){
+  modalPrivacidade.style.display="none";
+}
 
-/* ========= GOOGLE ========= */
-btnGoogle.onclick = async ()=>{
-  await sb.auth.signInWithOAuth({
-    provider:"google",
-    options:{ redirectTo: location.origin + "/login.html" }
-  });
-};
-
-/* ========= RESET ========= */
-btnReset.onclick = async ()=>{
-  if(!email.value){ msg.textContent="Digite seu email"; msg.className="msg error"; return; }
-  await sb.auth.resetPasswordForEmail(email.value,{ redirectTo: location.origin + "/login.html" });
-  msg.textContent="Email de recuperação enviado";
-  msg.className="msg success";
-};
-
-/* ========= CADASTRO ========= */
+/* ===== CADASTRO ===== */
 abrirCadastro.onclick=()=>modalCadastro.style.display="flex";
 fecharCadastro.onclick=()=>modalCadastro.style.display="none";
 
 btnCadastro.onclick = async ()=>{
-  if(c_senha.value!==c_confirma.value){
-    msgCadastro.textContent="Senhas não conferem"; msgCadastro.className="msg error"; return;
+  msgCadastro.textContent="";
+
+  if(!aceitePrivacidade.checked){
+    msgCadastro.textContent="Você precisa aceitar as Políticas de Privacidade";
+    msgCadastro.className="msg error";
+    return;
   }
+
+  if(c_senha.value!==c_confirma.value){
+    msgCadastro.textContent="Senhas não conferem";
+    msgCadastro.className="msg error";
+    return;
+  }
+
   const { data, error } = await sb.auth.signUp({
     email:c_email.value.trim(),
     password:c_senha.value
   });
-  if(error){ msgCadastro.textContent=error.message; msgCadastro.className="msg error"; return; }
+
+  if(error){
+    msgCadastro.textContent=error.message;
+    msgCadastro.className="msg error";
+    return;
+  }
 
   await sb.from("user").insert({
     id:data.user.id,
@@ -220,67 +289,9 @@ btnCadastro.onclick = async ()=>{
     whatsapp:c_whats.value.replace(/\D/g,"")
   });
 
-  msgCadastro.textContent="Conta criada! Confirme o email.";
+  msgCadastro.textContent="Conta criada! Confirme seu email.";
   msgCadastro.className="msg success";
 };
-
-/* ========= SESSÕES ========= */
-async function controlarSessoes(user){
-  const token = crypto.randomUUID();
-
-  const { data: perfil } = await sb.from("user")
-    .select("max_sessoes").eq("id",user.id).single();
-
-  const { data: sessoes } = await sb.from("sessoes")
-    .select("*").eq("user_id",user.id);
-
-  if(sessoes.length >= perfil.max_sessoes){
-    abrirPopupSessoes(sessoes,user,token);
-    return;
-  }
-  criarSessao(user,token);
-}
-
-async function criarSessao(user,token){
-  await sb.from("sessoes").insert({
-    user_id:user.id,
-    session_token:token,
-    user_agent:navigator.userAgent
-  });
-  localStorage.setItem("session_token",token);
-  localStorage.setItem("usuario_email",user.email);
-  location.replace("index.html");
-}
-
-function abrirPopupSessoes(sessoes,user,token){
-  modalSessoes.style.display="flex";
-  listaSessoes.innerHTML = sessoes.map(s=>{
-    const d = detectarDispositivo(s.user_agent);
-    return `
-      <div class="sessao-item">
-        <div class="sessao-icon">${d.icon}</div>
-        <div class="sessao-info">
-          <strong>${d.nome}</strong>
-          <span>${d.descricao}</span>
-        </div>
-        <button onclick="encerrarSessao('${s.id}','${user.id}','${token}','${user.email}')">
-          Desconectar
-        </button>
-      </div>`;
-  }).join("");
-}
-
-async function encerrarSessao(id,userId,token,email){
-  await sb.from("sessoes").delete().eq("id",id);
-  criarSessao({id:userId,email},token);
-}
-
-function detectarDispositivo(ua){
-  ua=ua.toLowerCase();
-  if(/iphone|android.*mobile/.test(ua)) return {icon:"📱",nome:"Celular",descricao:"Smartphone"};
-  if(/ipad|tablet/.test(ua)) return {icon:"📲",nome:"Tablet",descricao:"Tablet"};
-  return {icon:"💻",nome:"Computador",descricao:"Desktop / Notebook"};
-}
 </script>
 
 </body>

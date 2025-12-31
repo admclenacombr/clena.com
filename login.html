@@ -85,20 +85,19 @@ input:focus{outline:none;border-color:var(--accent)}
 .msg.error{color:#f87171}
 .msg.success{color:#22c55e}
 
-/* ================= MODAL ================= */
+/* ================= MODAIS ================= */
 .modal{
   position:fixed;inset:0;background:rgba(0,0,0,.85);
   display:none;align-items:center;justify-content:center;
   z-index:9999
 }
 
+/* ================= SESSÕES ================= */
 .sessao-box{
   background:#141417;
   padding:26px;border-radius:18px;
   width:420px;max-width:92%
 }
-
-/* ================= SESSÕES ================= */
 .sessao-item{
   display:flex;align-items:center;gap:14px;
   background:#0f0f13;border:1px solid #242428;
@@ -122,6 +121,7 @@ input:focus{outline:none;border-color:var(--accent)}
 
 <body>
 
+<!-- ================= LOGIN ================= -->
 <div class="card">
   <div class="logo">CLENA <span>TV</span></div>
 
@@ -135,13 +135,29 @@ input:focus{outline:none;border-color:var(--accent)}
   </div>
 
   <div class="footer">
+    <a id="abrirCadastro">Criar conta</a>
     <a id="btnReset">Esqueci a senha</a>
   </div>
 
   <div class="msg" id="msg"></div>
 </div>
 
-<!-- ================= MODAL SESSÕES ================= -->
+<!-- ================= CADASTRO ================= -->
+<div class="modal" id="modalCadastro">
+  <div class="card">
+    <h2>Criar conta</h2>
+    <div class="group"><label>Email</label><input id="c_email"></div>
+    <div class="group"><label>CPF</label><input id="c_cpf"></div>
+    <div class="group"><label>WhatsApp</label><input id="c_whats"></div>
+    <div class="group"><label>Senha</label><input id="c_senha" type="password"></div>
+    <div class="group"><label>Confirmar senha</label><input id="c_confirma" type="password"></div>
+    <button id="btnCadastro" class="btn btn-primary">Cadastrar</button>
+    <div class="footer"><a id="fecharCadastro">Cancelar</a></div>
+    <div class="msg" id="msgCadastro"></div>
+  </div>
+</div>
+
+<!-- ================= SESSÕES ================= -->
 <div class="modal" id="modalSessoes">
   <div class="sessao-box">
     <h3>Limite de dispositivos atingido</h3>
@@ -156,6 +172,7 @@ const sb = supabase.createClient(
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
+/* ========= LOGIN ========= */
 btnLogin.onclick = async ()=>{
   msg.textContent="";
   const { data, error } = await sb.auth.signInWithPassword({
@@ -166,6 +183,7 @@ btnLogin.onclick = async ()=>{
   controlarSessoes(data.user);
 };
 
+/* ========= GOOGLE ========= */
 btnGoogle.onclick = async ()=>{
   await sb.auth.signInWithOAuth({
     provider:"google",
@@ -173,15 +191,48 @@ btnGoogle.onclick = async ()=>{
   });
 };
 
+/* ========= RESET ========= */
+btnReset.onclick = async ()=>{
+  if(!email.value){ msg.textContent="Digite seu email"; msg.className="msg error"; return; }
+  await sb.auth.resetPasswordForEmail(email.value,{ redirectTo: location.origin + "/login.html" });
+  msg.textContent="Email de recuperação enviado";
+  msg.className="msg success";
+};
+
+/* ========= CADASTRO ========= */
+abrirCadastro.onclick=()=>modalCadastro.style.display="flex";
+fecharCadastro.onclick=()=>modalCadastro.style.display="none";
+
+btnCadastro.onclick = async ()=>{
+  if(c_senha.value!==c_confirma.value){
+    msgCadastro.textContent="Senhas não conferem"; msgCadastro.className="msg error"; return;
+  }
+  const { data, error } = await sb.auth.signUp({
+    email:c_email.value.trim(),
+    password:c_senha.value
+  });
+  if(error){ msgCadastro.textContent=error.message; msgCadastro.className="msg error"; return; }
+
+  await sb.from("user").insert({
+    id:data.user.id,
+    email:data.user.email,
+    cpf:c_cpf.value.replace(/\D/g,""),
+    whatsapp:c_whats.value.replace(/\D/g,"")
+  });
+
+  msgCadastro.textContent="Conta criada! Confirme o email.";
+  msgCadastro.className="msg success";
+};
+
+/* ========= SESSÕES ========= */
 async function controlarSessoes(user){
   const token = crypto.randomUUID();
 
-  const { data: perfil } = await sb
-    .from("user").select("max_sessoes").eq("id",user.id).single();
+  const { data: perfil } = await sb.from("user")
+    .select("max_sessoes").eq("id",user.id).single();
 
-  const { data: sessoes } = await sb
-    .from("sessoes").select("*")
-    .eq("user_id",user.id);
+  const { data: sessoes } = await sb.from("sessoes")
+    .select("*").eq("user_id",user.id);
 
   if(sessoes.length >= perfil.max_sessoes){
     abrirPopupSessoes(sessoes,user,token);
@@ -201,7 +252,7 @@ async function criarSessao(user,token){
   location.replace("index.html");
 }
 
-function abrirPopupSessoes(sessoes,user,novoToken){
+function abrirPopupSessoes(sessoes,user,token){
   modalSessoes.style.display="flex";
   listaSessoes.innerHTML = sessoes.map(s=>{
     const d = detectarDispositivo(s.user_agent);
@@ -212,7 +263,7 @@ function abrirPopupSessoes(sessoes,user,novoToken){
           <strong>${d.nome}</strong>
           <span>${d.descricao}</span>
         </div>
-        <button onclick="encerrarSessao('${s.id}','${user.id}','${novoToken}','${user.email}')">
+        <button onclick="encerrarSessao('${s.id}','${user.id}','${token}','${user.email}')">
           Desconectar
         </button>
       </div>`;
@@ -221,11 +272,11 @@ function abrirPopupSessoes(sessoes,user,novoToken){
 
 async function encerrarSessao(id,userId,token,email){
   await sb.from("sessoes").delete().eq("id",id);
-  criarSessao({id,email},token);
+  criarSessao({id:userId,email},token);
 }
 
 function detectarDispositivo(ua){
-  ua = ua.toLowerCase();
+  ua=ua.toLowerCase();
   if(/iphone|android.*mobile/.test(ua)) return {icon:"📱",nome:"Celular",descricao:"Smartphone"};
   if(/ipad|tablet/.test(ua)) return {icon:"📲",nome:"Tablet",descricao:"Tablet"};
   return {icon:"💻",nome:"Computador",descricao:"Desktop / Notebook"};

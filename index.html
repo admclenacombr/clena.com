@@ -2294,25 +2294,6 @@ function fechar(){
 
 
 
-async function logout(){
-  if (logoutEmAndamento) return;
-
-  logoutEmAndamento = true;
-
-sessionStorage.setItem("clena_logout", "1");
-
-await sb.auth.signOut();
-
-localStorage.clear();
-// NÃO LIMPE sessionStorage aqui
-
-
-  // 🔥 delay curto para o Supabase sincronizar
-  setTimeout(() => {
-    location.replace("login.html");
-  }, 300);
-}
-
 
 
 function irProximoEpisodio(){
@@ -2405,12 +2386,6 @@ if ("serviceWorker" in navigator) {
       newWorker.addEventListener("statechange", () => {
         if (newWorker.state === "installed") {
           if (navigator.serviceWorker.controller) {
-setTimeout(() => {
-  if (!sessionStorage.getItem("sw_reloaded")) {
-    sessionStorage.setItem("sw_reloaded", "1");
-    location.reload();
-  }
-}, 5000);
 
 
           }
@@ -2460,8 +2435,7 @@ async function validarSessao() {
 
   
 
-async function abrirLinkPlano(plano){
-  const email = localStorage.getItem("usuario_email");
+
 
   if(!email){
     localStorage.setItem("redirect_after_login", "index.html");
@@ -2686,9 +2660,6 @@ function fecharApexInfo(){
   document.getElementById("apexOverlay").style.display = "none";
 }
 
-async function carregarApex(){
-  const email = localStorage.getItem("usuario_email");
-  if (!email) return;
 
   try {
     const res = await fetch(`/api/carteira?email=${encodeURIComponent(email)}`);

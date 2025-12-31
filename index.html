@@ -1507,6 +1507,7 @@ function apexParaReais(apex){
 
   
 let redirecionando = false;
+let logoutEmAndamento = false;
 
 /* ================= PERFIL NOVO ISOLADO ================= */
 let perfilUserId = null;
@@ -2293,11 +2294,28 @@ function fechar(){
 
 
 async function logout(){
-  await sb.auth.signOut();
+  if (logoutEmAndamento) return;
+
+  logoutEmAndamento = true;
+
+  // marca logout global
+  sessionStorage.setItem("clena_logout", "1");
+
+  try {
+    await sb.auth.signOut();
+  } catch (e) {
+    console.warn("Erro no signOut:", e);
+  }
+
   localStorage.clear();
   sessionStorage.clear();
-  location.replace("login.html");
+
+  // 🔥 delay curto para o Supabase sincronizar
+  setTimeout(() => {
+    location.replace("login.html");
+  }, 300);
 }
+
 
 
 function irProximoEpisodio(){
@@ -2410,7 +2428,9 @@ setTimeout(() => {
   
 async function validarSessao() {
   const { data: { session } } = await sb.auth.getSession();
-
+  if (sessionStorage.getItem("clena_logout") === "1") {
+    return false;
+  }
   if (!session || !session.user) {
     if (!redirecionando) {
       redirecionando = true;

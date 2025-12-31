@@ -1535,20 +1535,20 @@ async function perfilCarregar(){
 
   const userId = session.user.id;
 
-  const { data: user, error } = await sb
-    .from("user")
-    .select(`
-      id,
-      email,
-      nome_usuario,
-      username,
-      avatar_url,
-      tipo_assinatura,
-      valor_assinatura,
-      vencimento_assinatura
-    `)
-    .eq("id", userId)
-    .single();
+const { data: user, error } = await sb
+  .from("user")
+  .select(`
+    id,
+    email,
+    status,
+    trial_expires_at,
+    tipo_assinatura,
+    valor_assinatura,
+    vencimento_assinatura
+  `)
+  .eq("id", userId)
+  .single();
+
 
   if (error || !user) {
     console.error("Erro ao carregar perfil", error);
@@ -2863,6 +2863,8 @@ window.addEventListener("message", (event) => {
 </script>
 <script>
 (async () => {
+  sessionStorage.removeItem("clena_logout");
+
   const ok = await validarSessao();
   if (!ok) return;
 
@@ -2871,8 +2873,5 @@ window.addEventListener("message", (event) => {
 })();
 </script>
 
-
-
-  
 </body>
 </html>

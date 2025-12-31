@@ -2426,7 +2426,7 @@ setTimeout(() => {
 async function validarSessao() {
   const logoutFlag = sessionStorage.getItem("clena_logout");
 
-  // 🔥 SE ESTÁ DESLOGANDO, NÃO FAZ MAIS NADA
+  // 🔥 se está em logout, não faz nada
   if (logoutFlag === "1") {
     return false;
   }
@@ -2434,29 +2434,28 @@ async function validarSessao() {
   const { data: { session } } = await sb.auth.getSession();
 
   if (!session || !session.user) {
-    if (!redirecionando && !logoutFlag) {
+    if (!redirecionando) {
       redirecionando = true;
       location.replace("login.html");
     }
     return false;
   }
-}
 
   const userId = session.user.id;
 
-const { data: user, error } = await sb
-  .from("user")
-  .select(`
-    id,
-    email,
-    status,
-    trial_expires_at,
-    tipo_assinatura,
-    valor_assinatura,
-    vencimento_assinatura
-  `)
-  .eq("id", userId)
-  .single();
+  const { data: user, error } = await sb
+    .from("user")
+    .select(`
+      id,
+      email,
+      status,
+      trial_expires_at,
+      tipo_assinatura,
+      valor_assinatura,
+      vencimento_assinatura
+    `)
+    .eq("id", userId)
+    .single();
 
   if (error || !user) {
     await sb.auth.signOut();
@@ -2473,7 +2472,7 @@ const { data: user, error } = await sb
   }
 
   if (user.status === "bloqueado") {
-    renderBloqueio(user.email);
+    renderBloqueio?.(user.email);
     return false;
   }
 
@@ -2484,19 +2483,6 @@ const { data: user, error } = await sb
 
   return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

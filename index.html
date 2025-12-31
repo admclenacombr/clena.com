@@ -2438,20 +2438,19 @@ async function validarSessao() {
 
   const userId = session.user.id;
 
-  const { data: user, error } = await sb
-    .from("user")
-    .select(`
-      id,
-      email,
-      status,
-      trial_expires_at,
-      tipo_assinatura,
-      valor_assinatura,
-      vencimento_assinatura
-    `)
-    .eq("id", userId)
-    .maybeSingle();
-    .single()
+const { data: user, error } = await sb
+  .from("user")
+  .select(`
+    id,
+    email,
+    status,
+    trial_expires_at,
+    tipo_assinatura,
+    valor_assinatura,
+    vencimento_assinatura
+  `)
+  .eq("id", userId)
+  .single();
 
   if (error || !user) {
     await sb.auth.signOut();

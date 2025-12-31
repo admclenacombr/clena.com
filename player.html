@@ -9,6 +9,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{background:#000;color:#fff;font-family:Inter,Arial}
@@ -57,13 +58,81 @@ font-weight:600;cursor:pointer;align-self:flex-start}
 #layout{grid-template-columns:1fr}
 #player{position:relative;top:0}
 }
+
+
+
+/* TEMPORADAS */
+#temporadasBox{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:18px
+}
+.temporada-btn{
+  padding:8px 14px;
+  border-radius:14px;
+  background:#111;
+  border:1px solid #333;
+  color:#fff;
+  cursor:pointer;
+  font-weight:600;
+}
+.temporada-btn.active{
+  background:#dc2626;
+  border-color:#dc2626;
+}
+
+/* EPISÓDIOS */
+#episodiosBox{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:16px
+}
+.episodio{
+  padding:12px 14px;
+  border-radius:16px;
+  background:#0b0b0b;
+  border:1px solid #222;
+  cursor:pointer;
+  transition:.25s;
+}
+.episodio:hover{
+  background:#151515;
+}
+.episodio.active{
+  border-color:#dc2626;
+  box-shadow:0 0 0 1px #dc2626;
+}
+#selectorsBox{
+  display:flex;
+  gap:12px;
+  margin-top:18px;
+}
+
+#selectorsBox select{
+  flex:1;
+  padding:12px 14px;
+  border-radius:14px;
+  background:#111;
+  border:1px solid #333;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+
+#selectorsBox select:focus{
+  outline:none;
+  border-color:#dc2626;
+}
+
 </style>
 </head>
 
 <body>
 
 <div id="top">
-  <button onclick="history.back()">← Voltar</button>
+<button onclick="voltarHome()">← Voltar</button>
 </div>
 
 <div id="layout">
@@ -76,26 +145,40 @@ font-weight:600;cursor:pointer;align-self:flex-start}
   </div>
 
   <div id="side">
-    <h1 id="titulo"></h1>
-    <div id="meta"></div>
+  <h1 id="titulo"></h1>
+  <div id="meta"></div>
 
-    <div id="avaliarBox">
-      <div class="avaliar-label">Avalie este conteúdo</div>
-      <div id="avaliarStars" class="avaliar-stars"></div>
-    </div>
-
-    <p id="desc" class="collapsed"></p>
-    <button id="lerMais" style="display:none">Ler mais</button>
+  <div id="avaliarBox">
+    <div class="avaliar-label">Avalie este conteúdo</div>
+    <div id="avaliarStars" class="avaliar-stars"></div>
   </div>
 
+
+<div id="selectorsBox">
+  <select id="temporadaSelect"></select>
+  <select id="episodioSelect"></select>
 </div>
+
+
+    
+  <p id="desc" class="collapsed"></p>
+  <button id="lerMais" style="display:none">Ler mais</button>
+
+
+</div>
+</div> <!-- ✅ FECHAMENTO DO #layout -->
+
 
 <script>
 const sb = supabase.createClient(
  "https://dxkszikemntfusfyrzos.supabase.co",
  "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
+let episodios = [];
+let temporadaAtual = null;
 
+
+  
 const item = JSON.parse(
  decodeURIComponent(new URLSearchParams(location.search).get("item"))
 );
@@ -158,16 +241,101 @@ async function salvarAvaliacao(nota){
   carregar();
 }
 
+
+
+async function carregarEpisodios(){
+  const { data } = await sb
+    .from("filmes")
+    .select("*")
+    .eq("tipo", "serie")
+    .eq("serie_nome", item.serie_nome)
+    .not("episodio", "is", null)
+    .order("temporada", { ascending: true })
+    .order("episodio", { ascending: true });
+
+  episodios = data || [];
+
+  if(episodios.length){
+    renderTemporadas();
+  }else{
+    temporadasBox.innerHTML="";
+    episodiosBox.innerHTML="";
+  }
+}
+
+function voltarHome(){
+  const origem = sessionStorage.getItem("origem");
+  if(origem) window.location.href = origem;
+  else window.location.href = "index.html";
+}
+
+
+function renderTemporadas(){
+  const temporadas = [...new Set(episodios.map(e=>e.temporada))];
+
+  temporadaSelect.innerHTML = "";
+  episodioSelect.innerHTML = "";
+
+  temporadas.forEach(t=>{
+    const opt=document.createElement("option");
+    opt.value=t;
+    opt.textContent=`Temporada ${t}`;
+    temporadaSelect.appendChild(opt);
+  });
+
+  temporadaAtual = temporadas[0];
+  temporadaSelect.value = temporadaAtual;
+
+  temporadaSelect.onchange = ()=>{
+    temporadaAtual = Number(temporadaSelect.value);
+    renderEpisodios();
+  };
+
+  renderEpisodios();
+}
+
+function renderEpisodios(){
+  episodioSelect.innerHTML="";
+
+  const lista = episodios.filter(e=>e.temporada===temporadaAtual);
+
+  lista.forEach(e=>{
+    const opt=document.createElement("option");
+    opt.value = e.video_url;
+    opt.textContent = `Episódio ${e.episodio}`;
+    episodioSelect.appendChild(opt);
+  });
+
+  episodioSelect.onchange = ()=>{
+    tocar(episodioSelect.value);
+  };
+
+  if(lista.length){
+    episodioSelect.value = lista[0].video_url;
+    tocar(lista[0].video_url);
+  }
+}
+
+
 /* ▶ PLAYER */
 function tocar(src){
-  if(!src)return;
+  if(!src) return;
+
   if(/\.m3u8$/i.test(src)){
-    iframe.remove();video.src=src;video.play().catch(()=>{});
+    iframe.style.display="none";
+    iframe.src="";
+    video.style.display="block";
+    video.src=src;
+    video.play().catch(()=>{});
   }else{
-    video.remove();
+    video.pause();
+    video.style.display="none";
+    video.src="";
+    iframe.style.display="block";
     iframe.src=`https://iframe.mediadelivery.net/embed/569072/${src}`;
   }
 }
+
 
 /* 📥 CARREGAR */
 async function carregar(){
@@ -191,6 +359,9 @@ async function carregar(){
 
   const metas=[];
   if(filme.categoria) metas.push(['🎬',filme.categoria]);
+
+
+  
   if(filme.tipo) metas.push(['📺',filme.tipo]);
   if(filme.ano_lancamento) metas.push(['📅',filme.ano_lancamento]);
   if(filme.idioma) metas.push(['🌎',filme.idioma]);
@@ -215,7 +386,16 @@ async function carregar(){
     renderAvaliarStars(0);
   }
 
+if(filme.tipo !== "serie" || filme.video_url !== "SERIE_PARENT"){
+  temporadasBox.style.display="none";
+  episodiosBox.style.display="none";
   tocar(filme.video_url);
+  return;
+}
+
+
+  
+await carregarEpisodios();
 
   setTimeout(()=>{
     if(desc.scrollHeight>desc.clientHeight){

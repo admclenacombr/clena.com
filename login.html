@@ -2833,6 +2833,11 @@ window.addEventListener("message", (event) => {
 </script>
 
 <script>
+  // 🔓 limpa flag de logout ao entrar no app
+  sessionStorage.removeItem("clena_logout");
+</script>
+
+<script>
   // 🚀 INICIALIZA O APP (ORDEM CORRETA)
   (async () => {
     const ok = await validarSessao();

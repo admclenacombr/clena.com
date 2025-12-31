@@ -2437,50 +2437,6 @@ async function validarSessao() {
 
 
 
-  if(!email){
-    localStorage.setItem("redirect_after_login", "index.html");
-    alert("Faça login para continuar");
-    location.href = "login.html";
-    return;
-  }
-
-  try{
-    const res = await fetch(
-      "https://www.clena.com.br/api/create-payment",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        credentials: "same-origin",
-        body: JSON.stringify({
-          action: "assinatura", // 🔥 IGUAL AO OUTRO
-          plano: plano,
-          email: email
-        })
-      }
-    );
-
-    const data = await res.json();
-    console.log("RETORNO CREATE PAYMENT:", data);
-
-    if(data?.url){
-      window.location.href = data.url;
-      return;
-    }
-
-    alert("Erro ao iniciar pagamento");
-    console.error(data);
-
-  }catch(e){
-    alert("Falha de conexão");
-    console.error(e);
-  }
-}
-
-
-
-
-
 
   
 

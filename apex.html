@@ -316,36 +316,42 @@ function selecionarPlano(id, valor, el){
 
 async function continuarPagamento(){
   if(!planoIdSelecionado){
-  alert("Selecione um valor para continuar");
-  return;
-}
-
-
-  const email = localStorage.getItem("usuario_email");
-  if(!email){
-    alert("Faça login para continuar");
+    alert("Selecione um valor para continuar");
     return;
   }
 
   try{
-const res = await fetch("/api/create-payment", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    action: "apex",              // 🔥 action correta
-    plano_id: planoIdSelecionado,
-    email
-  })
-});
+    // 🔐 pega sessão real do Supabase
+    const { data: sessionData } =
+      await window.parent.sb.auth.getSession();
 
-const data = await res.json();
+    const session = sessionData?.session;
 
-if (data.url) {
-window.top.location.href = data.url;
-} else {
-  console.error("Erro ao criar pagamento Apex:", data);
-  alert("Erro ao iniciar pagamento");
-}
+    if (!session) {
+      alert("Faça login para continuar");
+      return;
+    }
+
+    const res = await fetch("/api/create-payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        action: "apex",
+        plano_id: planoIdSelecionado
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.url) {
+      window.top.location.href = data.url;
+    } else {
+      console.error("Erro ao criar pagamento Apex:", data);
+      alert("Erro ao iniciar pagamento");
+    }
 
   }catch(err){
     alert("Erro de conexão");

@@ -21,16 +21,12 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f0f10">
 
-<!-- Android / Chrome PWA -->
-<meta name="mobile-web-app-capable" content="yes">
-
 <!-- iOS -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Clena TV">
 <link rel="apple-touch-icon" href="logo1.png">
 <link rel="apple-touch-startup-image" href="logo1.png">
-
 <style>
 *{margin:0;padding:0;box-sizing:border-box;scrollbar-width:none}
 *::-webkit-scrollbar{display:none}
@@ -1506,8 +1502,11 @@ function apexParaReais(apex){
   return (Number(apex) / APEX_POR_REAL).toFixed(2);
 }
 
+
+
+
+  
 let redirecionando = false;
-let logoutEmAndamento = false;
 
 /* ================= PERFIL NOVO ISOLADO ================= */
 let perfilUserId = null;
@@ -1530,41 +1529,42 @@ function perfilFechar(){
 }
 
 async function perfilCarregar(){
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session?.user) return;
+  const email = localStorage.getItem("usuario_email");
+  if (!email) return;
 
-  const userId = session.user.id;
-
-const { data: user, error } = await sb
-  .from("user")
-  .select(`
-    id,
-    email,
-    status,
-    trial_expires_at,
-    tipo_assinatura,
-    valor_assinatura,
-    vencimento_assinatura
-  `)
-  .eq("id", userId)
-  .single();
-
+  const { data: user, error } = await sb
+    .from("usuarios")
+    .select(`
+      id,
+      email,
+      nome_usuario,
+      username,
+      avatar_url,
+      tipo_assinatura,
+      valor_assinatura,
+      vencimento_assinatura
+    `)
+    .eq("email", email)
+    .single();
 
   if (error || !user) {
-    console.error("Erro ao carregar perfil", error);
+    console.error("Erro ao carregar perfil:", error);
     return;
   }
 
   perfilUserId = user.id;
 
+  // 📧 Dados básicos
   pEmail.textContent = user.email;
   pNome.value = user.nome_usuario || "";
   pUser.value = user.username || "";
 
+  // 🖼 Avatar
   pAvatar.src =
     user.avatar_url ||
     `https://ui-avatars.com/api/?name=${(user.nome_usuario || "U")[0]}&background=e50914&color=fff`;
 
+  // 💳 Plano (vem DIRETO do usuário)
   pPlano.textContent = user.tipo_assinatura || "-";
 
   pValor.textContent = user.valor_assinatura
@@ -1577,18 +1577,10 @@ const { data: user, error } = await sb
   pVenc.textContent = user.vencimento_assinatura
     ? new Date(user.vencimento_assinatura).toLocaleDateString("pt-BR")
     : "-";
-
   await carregarApex();
 }
 
 
-
-
-
-
-
-
-  
 
 async function perfilValidarUsername(){
   const u = pUser.value.toLowerCase().replace(/[^a-z0-9._]/g,"");
@@ -1601,7 +1593,7 @@ async function perfilValidarUsername(){
   }
 
   const { data } = await sb
-.from("user")
+    .from("usuarios")
     .select("id")
     .eq("username", u)
     .neq("id", perfilUserId);
@@ -1620,7 +1612,7 @@ async function perfilValidarUsername(){
 async function perfilSalvar(){
   if(!(await perfilValidarUsername())) return;
 
-  await sb.from("user")
+  await sb.from("usuarios")
     .update({
       nome_usuario: pNome.value,
       username: pUser.value
@@ -1690,10 +1682,9 @@ async function perfilUploadAvatar(input){
   const avatarUrl =
     `https://sessao99.b-cdn.net/avatars/${nome}`;
 
-await sb.from("user")
-  .update({ avatar_url: avatarUrl })
-  .eq("id", perfilUserId);
-
+  await sb.from("usuarios")
+    .update({ avatar_url: avatarUrl })
+    .eq("id", perfilUserId);
 
   pAvatar.src = avatarUrl;
   await carregarAvatarHeader();
@@ -2294,7 +2285,11 @@ function fechar(){
 
 
 
-
+function logout(){
+  localStorage.clear();
+  sessionStorage.clear();
+  location.replace("login.html");
+}
 
 function irProximoEpisodio(){
   btnProximo.style.display = "none";
@@ -2386,6 +2381,12 @@ if ("serviceWorker" in navigator) {
       newWorker.addEventListener("statechange", () => {
         if (newWorker.state === "installed") {
           if (navigator.serviceWorker.controller) {
+setTimeout(() => {
+  if (!sessionStorage.getItem("sw_reloaded")) {
+    sessionStorage.setItem("sw_reloaded", "1");
+    location.reload();
+  }
+}, 5000);
 
 
           }
@@ -2395,45 +2396,206 @@ if ("serviceWorker" in navigator) {
 
   });
 }
-
-
 async function validarSessao() {
-  if (sessionStorage.getItem("clena_logout") === "1") return false;
+  const email = localStorage.getItem("usuario_email");
+  const tokenLocal = localStorage.getItem("session_token");
 
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session?.user) {
+  // 🛑 PASSO 3 — SE NÃO TIVER EMAIL OU TOKEN, CAI FORA
+if (!email || !tokenLocal) {
+  localStorage.clear();
+
+  if (!redirecionando) {
+    redirecionando = true;
     location.replace("login.html");
-    return false;
   }
 
-  const { data: user } = await sb
-    .from("user")
-    .select("tipo_assinatura, status")
-    .eq("id", session.user.id)
-    .single();
+  return false;
+}
 
-  if (!user) {
-    location.replace("login.html");
-    return false;
-  }
 
-  if (!user.tipo_assinatura) {
+ const { data, error } = await sb
+  .from("usuarios")
+.select("id, status, trial_expires_at, session_token, controle_sessao, tipo_assinatura")
+  .eq("email", email)
+  .maybeSingle();
+// 🔥 REGRA OPÇÃO A — LOGADO MAS SEM PLANO → PLANOS
+if (!data.tipo_assinatura) {
+  if (!redirecionando) {
+    redirecionando = true;
     location.replace("planos.html");
+  }
+  return false;
+}
+
+
+// 🔐 PASSO 4 — CONTROLE DE SESSÃO (OUTRO DISPOSITIVO)
+if (data.controle_sessao === true) {
+  if (data.session_token !== tokenLocal) {
+
+    const { data: ultimoLogin } = await sb
+      .from("login_logs")
+      .select("user_agent, created_at")
+      .eq("user_id", data.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const agente =
+      ultimoLogin?.user_agent || "Outro dispositivo";
+
+mostrarSessaoEncerrada(agente);
+return false;
+
+
+    localStorage.clear();
+
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      location.href = "login.html";
+    } else {
+      location.replace("login.html");
+    }
+
     return false;
   }
+}
 
-  if (user.status === "bloqueado") {
-    renderBloqueio();
-    return false;
-  }
 
-  return true;
+  const agora = new Date();
+  const expira = new Date(data.trial_expires_at);
+if (data.status === "bloqueado") {
+  const emailUser = email;
+
+  const mensagem = encodeURIComponent(
+`Olá, meu acesso está bloqueado.
+
+📧 Email: ${emailUser}
+
+Gostaria de regularizar minha assinatura.`
+  );
+
+  const whatsappUrl = `https://wa.me/5575998112535?text=${mensagem}`;
+
+  // 🔥 DESARMA DEFINITIVAMENTE A ABERTURA (CRÍTICO)
+  sessionStorage.setItem("clena_abertura_ok", "1");
+  const aberturaFrame = document.getElementById("aberturaFrame");
+  if (aberturaFrame) aberturaFrame.remove();
+
+  // 🔥 LIMPA QUALQUER TRAVA GLOBAL (MODAL / BUSCA / OVERFLOW)
+  document.body.classList.remove("modal-open");
+  document.body.classList.remove("search-open");
+
+  document.body.style.overflow = "auto";
+  document.documentElement.style.overflow = "auto";
+  document.body.style.touchAction = "auto";
+  document.body.style.height = "auto";
+
+  // 🧱 TELA DE BLOQUEIO
+  document.body.innerHTML = `
+    <div style="
+      min-height:100vh;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      background:#0f0f10;
+      color:#fff;
+      font-family:Inter,Arial;
+      padding:20px;
+      overflow-y:auto;
+    ">
+      <div style="width:100%;max-width:960px">
+
+        <!-- 🚫 BLOQUEIO -->
+        <div style="
+          background:#1b1b1e;
+          padding:30px;
+          border-radius:16px;
+          box-shadow:0 20px 40px rgba(0,0,0,.6);
+          text-align:center;
+          margin-bottom:26px;
+        ">
+          <h1 style="color:#e50914;margin-bottom:10px">
+            🚫 Acesso bloqueado
+          </h1>
+
+          <p style="color:#ccc;margin-bottom:14px">
+            Seu acesso está temporariamente bloqueado.<br>
+            Escolha um plano abaixo para continuar assistindo.
+          </p>
+
+          <div style="font-size:12px;color:#777">
+            Email: <strong>${email}</strong>
+          </div>
+        </div>
+
+        <!-- 💳 PLANOS -->
+        <div id="planosContainer"></div>
+
+      </div>
+    </div>
+  `;
+
+  // 🔥 FORÇA RECÁLCULO DE SCROLL (SAFARI / iOS)
+  setTimeout(() => {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }, 0);
+
+  // 🚀 CARREGA PLANOS
+  carregarPlanosBloqueio();
+  return false;
 }
 
 
 
+  usuario = { email };
+  return true;
+}
 
-  
+
+async function abrirLinkPlano(plano){
+  const email = localStorage.getItem("usuario_email");
+
+  if(!email){
+    localStorage.setItem("redirect_after_login", "index.html");
+    alert("Faça login para continuar");
+    location.href = "login.html";
+    return;
+  }
+
+  try{
+    const res = await fetch(
+      "https://www.clena.com.br/api/create-payment",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        credentials: "same-origin",
+        body: JSON.stringify({
+          action: "assinatura", // 🔥 IGUAL AO OUTRO
+          plano: plano,
+          email: email
+        })
+      }
+    );
+
+    const data = await res.json();
+    console.log("RETORNO CREATE PAYMENT:", data);
+
+    if(data?.url){
+      window.location.href = data.url;
+      return;
+    }
+
+    alert("Erro ao iniciar pagamento");
+    console.error(data);
+
+  }catch(e){
+    alert("Falha de conexão");
+    console.error(e);
+  }
+}
+
+
 
 
 
@@ -2441,13 +2603,13 @@ async function validarSessao() {
   
 
 async function carregarAvatarHeader() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session?.user) return;
+  const email = localStorage.getItem("usuario_email");
+  if (!email) return;
 
   const { data } = await sb
-    .from("user")
+    .from("usuarios")
     .select("avatar_url, nome_usuario")
-    .eq("id", session.user.id)
+    .eq("email", email)
     .single();
 
   const avatarUrl =
@@ -2460,8 +2622,45 @@ async function carregarAvatarHeader() {
   `;
 }
 
+// 🔐 CONTROLE DE SESSÃO DOS FILTROS
+if (!sessionStorage.getItem("clena_session")) {
+  // nova sessão (reload, aba nova, voltou depois)
+  localStorage.removeItem("clena_filtros");
+  sessionStorage.setItem("clena_session", "1");
+}
+
+
+(async () => {
+
+// 🔥 inicia UI imediatamente
+iniciarApp();
+
+// valida sessão em paralelo
+validarSessao().then(ok => {
+  if (!ok) return;
+  carregarAvatarHeader();
+});
+
+setTimeout(() => {
+  setInterval(() => {
+    if (!redirecionando) {
+      validarSessao();
+    }
+  }, 15000);
+}, 5000);
+
+window.addEventListener("message", (event) => {
+  if (event.data === "filtros_aplicados") {
+    sessionStorage.removeItem("clena_filtros_aberto"); // 🔥 ADICIONE
+    aplicarFiltrosAvancados();
+    atualizarBotaoFiltros();
+  }
+});
+
 
   
+})();
+
 function abrirFiltrosAvancados(){
   const overlay = document.getElementById("filtrosOverlay");
   const iframe = document.getElementById("iframeFiltros");
@@ -2599,14 +2798,17 @@ function mostrarSessaoEncerrada(userAgent){
 
   document.getElementById("sessaoOverlay").style.display = "flex";
 }
-async function logout() {
-  sessionStorage.setItem("clena_logout", "1");
-  await sb.auth.signOut();
-  location.replace("login.html");
+
+function sessaoSair(){
+  localStorage.clear();
+  sessionStorage.clear();
+
+  if (window.matchMedia("(display-mode: standalone)").matches) {
+    location.href = "login.html";
+  } else {
+    location.replace("login.html");
+  }
 }
-
-
-
 function abrirApexInfo(){
   document.body.classList.add("modal-open");
   document.getElementById("apexOverlay").style.display = "flex";
@@ -2617,6 +2819,9 @@ function fecharApexInfo(){
   document.getElementById("apexOverlay").style.display = "none";
 }
 
+async function carregarApex(){
+  const email = localStorage.getItem("usuario_email");
+  if (!email) return;
 
   try {
     const res = await fetch(`/api/carteira?email=${encodeURIComponent(email)}`);
@@ -2724,22 +2929,6 @@ window.addEventListener("message", (event) => {
 });
 
 </script>
-<script>
-window.addEventListener("message", (event) => {
-  if (event.data === "filtros_aplicados") {
-    // fecha overlay
-    const overlay = document.getElementById("filtrosOverlay");
-    if (overlay) overlay.style.display = "none";
-
-    document.body.classList.remove("modal-open");
-    sessionStorage.removeItem("clena_filtros_aberto");
-
-    // 🔥 APLICA FILTROS DE VERDADE
-    aplicarFiltrosAvancados();
-    atualizarBotaoFiltros();
-  }
-});
-</script>
 
 <script>
   // 🔥 FAILSAFE ABSOLUTO DA ABERTURA
@@ -2764,18 +2953,6 @@ window.addEventListener("message", (event) => {
       }
     }, 600);
   }
-</script>
-<script>
-(async () => {
-
-  // 🔥 NÃO LIMPA clena_logout AQUI
-  const ok = await validarSessao();
-  if (!ok) return;
-
-  await carregarAvatarHeader();
-  await iniciarApp();
-})();
-
 </script>
 
 </body>

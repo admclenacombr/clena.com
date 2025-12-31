@@ -2294,11 +2294,12 @@ function fechar(){
 
 
 
-async function logout(){
+async function sessaoSair(){
   await sb.auth.signOut();
   sessionStorage.clear();
   location.replace("login.html");
 }
+
 
 
 function irProximoEpisodio(){
@@ -2532,14 +2533,14 @@ async function validarSessao() {
   
 
 async function abrirLinkPlano(plano){
-  const email = localStorage.getItem("usuario_email");
-
-  if(!email){
-    localStorage.setItem("redirect_after_login", "index.html");
-    alert("Faça login para continuar");
+  const { data: auth } = await sb.auth.getUser();
+  if(!auth?.user){
     location.href = "login.html";
     return;
   }
+
+  const email = auth.user.email;
+
 
   try{
     const res = await fetch(
@@ -2582,14 +2583,15 @@ async function abrirLinkPlano(plano){
   
 
 async function carregarAvatarHeader() {
-  const email = localStorage.getItem("usuario_email");
-  if (!email) return;
+  const { data: auth } = await sb.auth.getUser();
+  if (!auth?.user) return;
 
   const { data } = await sb
     .from("usuarios")
     .select("avatar_url, nome_usuario")
-    .eq("email", email)
+    .eq("id", auth.user.id)
     .single();
+
 
   const avatarUrl =
     data?.avatar_url ||
@@ -2799,8 +2801,10 @@ function fecharApexInfo(){
 }
 
 async function carregarApex(){
-  const email = localStorage.getItem("usuario_email");
-  if (!email) return;
+  const { data: auth } = await sb.auth.getUser();
+  if (!auth?.user) return;
+
+  const email = auth.user.email;
 
   try {
     const res = await fetch(`/api/carteira?email=${encodeURIComponent(email)}`);

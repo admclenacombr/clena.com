@@ -92,36 +92,86 @@ input:focus{outline:none;border-color:var(--accent)}
   z-index:9999
 }
 
-/* ================= PRIVACIDADE ================= */
-.privacidade-box{
+/* ================= POPUP PRIVACIDADE PREMIUM ================= */
+.privacidade-popup{
+  width:92%;
+  max-width:720px;
+  height:80vh;
+  background:linear-gradient(180deg,#16161b,#0f0f13);
+  border-radius:22px;
+  position:relative;
+  box-shadow:0 40px 140px rgba(0,0,0,.95);
+  overflow:hidden;
+  animation:fadeUp .25s ease;
+}
+
+/* HEADER FIXO */
+.privacidade-header{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:56px;
   display:flex;
   align-items:center;
-  gap:10px;
-  margin-top:12px;
-  font-size:13px;
-  color:#c7c7cc;
+  justify-content:space-between;
+  padding:0 18px;
+  background:rgba(20,20,23,.92);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid #242428;
+  z-index:10;
 }
 
-.privacidade-box input[type="checkbox"]{
-  width:18px;
-  height:18px;
-  accent-color:#e50914;
+.privacidade-header strong{
+  font-size:15px;
+  font-weight:800;
+}
+
+.privacidade-fechar{
+  width:34px;
+  height:34px;
+  border:none;
+  border-radius:50%;
+  background:#1f1f25;
+  color:#fff;
+  font-size:18px;
   cursor:pointer;
 }
-
-.privacidade-box label{
-  margin:0;
-  line-height:1.4;
-  cursor:pointer;
+.privacidade-fechar:hover{
+  background:#e50914;
 }
 
-.privacidade-box a{
-  color:#3ea6ff;
-  text-decoration:none;
+/* CONTEÚDO COM SCROLL INVISÍVEL */
+.privacidade-content{
+  position:absolute;
+  top:56px;
+  bottom:0;
+  left:0;
+  right:0;
+  overflow-y:auto;
+  padding:24px;
 }
 
-.privacidade-box a:hover{
-  text-decoration:underline;
+/* ESCONDE BARRA DE ROLAGEM */
+.privacidade-content::-webkit-scrollbar{
+  width:0;
+}
+.privacidade-content{
+  scrollbar-width:none;
+}
+
+/* IFRAME */
+.privacidade-content iframe{
+  width:100%;
+  height:100%;
+  border:none;
+  background:#0b0b0d;
+}
+
+/* ANIMAÇÃO */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
 }
 
 
@@ -225,10 +275,19 @@ input:focus{outline:none;border-color:var(--accent)}
 <!-- ================= PRIVACIDADE POPUP ================= -->
 <div class="modal" id="modalPrivacidade">
   <div class="privacidade-popup">
-    <button class="privacidade-fechar" onclick="fecharPrivacidade()">✕</button>
-    <iframe src="privacidade.html"></iframe>
+
+    <div class="privacidade-header">
+      <strong>Políticas de Privacidade</strong>
+      <button class="privacidade-fechar" onclick="fecharPrivacidade()">✕</button>
+    </div>
+
+    <div class="privacidade-content">
+      <iframe src="privacidade.html"></iframe>
+    </div>
+
   </div>
 </div>
+
 
 <!-- ================= SESSÕES ================= -->
 <div class="modal" id="modalSessoes">

@@ -1689,9 +1689,9 @@ async function perfilUploadAvatar(input){
   const avatarUrl =
     `https://sessao99.b-cdn.net/avatars/${nome}`;
 
-  await sb.from("usuarios")
-    .update({ avatar_url: avatarUrl })
-    .eq("id", perfilUserId);
+await sb.from("user")
+  .update({ avatar_url: avatarUrl })
+  .eq("id", perfilUserId);
 
   pAvatar.src = avatarUrl;
   await carregarAvatarHeader();

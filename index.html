@@ -134,64 +134,77 @@ input{
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ================= SUPABASE ================= */
 const sb = supabase.createClient(
   "https://dxkszikemntfusfyrzos.supabase.co",
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
-/* ================= MODAL ================= */
-abrirCadastro.onclick = () =>
-  modalCadastro.style.display="flex";
-
-fecharCadastro.onclick = () =>
-  modalCadastro.style.display="none";
-
 /* ================= LOGIN ================= */
-btnLogin.onclick = async ()=>{
-  msg.textContent="";
+btnLogin.onclick = async () => {
+  msg.textContent = "";
 
   const { data, error } = await sb.auth.signInWithPassword({
     email: email.value.trim(),
     password: senha.value
   });
 
-  if(error){
-    msg.textContent="Email ou senha inválidos";
-    msg.className="msg error";
+  if (error) {
+    msg.textContent = "Email ou senha inválidos";
+    msg.className = "msg error";
     return;
   }
 
-  controlarSessoes(data.user);
+  // 🔐 GARANTE PERFIL NA TABELA "user"
+  const { data: perfil } = await sb
+    .from("user")
+    .select("id")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (!perfil) {
+    await sb.from("user").insert({
+      id: data.user.id,
+      email: data.user.email
+    });
+  }
+
+  // ✅ LOGIN OK
+  location.replace("home.html"); // ou index real
 };
 
 /* ================= GOOGLE ================= */
-btnGoogle.onclick = async ()=>{
+btnGoogle.onclick = async () => {
   await sb.auth.signInWithOAuth({
-    provider:"google",
-    options:{ redirectTo: location.origin + "/login.html" }
+    provider: "google",
+    options: {
+      redirectTo: location.origin + "/home.html"
+    }
   });
 };
 
 /* ================= RESET ================= */
-btnReset.onclick = async ()=>{
-  if(!email.value){
-    msg.textContent="Informe seu email";
-    msg.className="msg error";
+btnReset.onclick = async () => {
+  if (!email.value) {
+    msg.textContent = "Informe seu email";
+    msg.className = "msg error";
     return;
   }
 
-  await sb.auth.resetPasswordForEmail(email.value);
-  msg.textContent="Email de recuperação enviado";
-  msg.className="msg success";
+  await sb.auth.resetPasswordForEmail(email.value, {
+    redirectTo: location.origin + "/reset.html"
+  });
+
+  msg.textContent = "Email de recuperação enviado";
+  msg.className = "msg success";
 };
 
 /* ================= CADASTRO ================= */
-btnCadastro.onclick = async ()=>{
-  if(c_senha.value !== c_confirma.value){
-    msgCadastro.textContent="Senhas não conferem";
-    msgCadastro.className="msg error";
+btnCadastro.onclick = async () => {
+  if (c_senha.value !== c_confirma.value) {
+    msgCadastro.textContent = "Senhas não conferem";
+    msgCadastro.className = "msg error";
     return;
   }
 
@@ -200,23 +213,26 @@ btnCadastro.onclick = async ()=>{
     password: c_senha.value
   });
 
-  if(error){
-    msgCadastro.textContent=error.message;
-    msgCadastro.className="msg error";
+  if (error) {
+    msgCadastro.textContent = error.message;
+    msgCadastro.className = "msg error";
     return;
   }
 
-  msgCadastro.textContent="Conta criada!";
-  msgCadastro.className="msg success";
+  // cria perfil
+  await sb.from("user").insert({
+    id: data.user.id,
+    email: data.user.email
+  });
 
-  email.value = c_email.value;
-  senha.value = c_senha.value;
+  msgCadastro.textContent = "Conta criada com sucesso!";
+  msgCadastro.className = "msg success";
 
-  setTimeout(()=>{
-    modalCadastro.style.display="none";
-    msgCadastro.textContent="";
-  },800);
+  setTimeout(() => {
+    modalCadastro.style.display = "none";
+  }, 800);
 };
+
 
 /* ================= CONTROLE DE SESSÕES ================= */
 async function controlarSessoes(user){

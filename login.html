@@ -104,16 +104,60 @@ input:focus{outline:none;border-color:var(--accent)}
   padding:26px;border-radius:18px;
   width:420px;max-width:92%
 }
+
+/* ================= SESSÕES BONITAS ================= */
 .sessao-item{
-  background:#0f0f13;border:1px solid #242428;
-  padding:14px;border-radius:12px;margin-bottom:10px
+  display:flex;
+  align-items:center;
+  gap:14px;
+
+  background:#0f0f13;
+  border:1px solid #242428;
+  padding:14px;
+  border-radius:14px;
+  margin-bottom:12px;
 }
+
+.sessao-icon{
+  width:48px;
+  height:48px;
+  border-radius:12px;
+  background:#18181d;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+}
+
+.sessao-info{
+  flex:1;
+}
+
+.sessao-info strong{
+  display:block;
+  font-size:14px;
+}
+
+.sessao-info span{
+  font-size:12px;
+  color:#9ca3af;
+}
+
 .sessao-item button{
-  margin-top:8px;width:100%;padding:10px;
-  border:none;border-radius:10px;
-  background:#e50914;color:#fff;
-  font-weight:700;cursor:pointer
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  background:#e50914;
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+  white-space:nowrap;
 }
+
+.sessao-item button:hover{
+  filter:brightness(1.1);
+}
+
 </style>
 </head>
 
@@ -286,17 +330,6 @@ async function controlarSessoes(user){
   criarSessao(user,token);
 }
 
-async function criarSessao(user,token){
-  await sb.from("sessoes").insert({
-    user_id:user.id,
-    session_token:token,
-    user_agent:navigator.userAgent
-  });
-
-  localStorage.setItem("session_token",token);
-  localStorage.setItem("usuario_email",user.email);
-  location.replace("index.html");
-}
 
 function abrirPopupSessoes(sessoes,user,novoToken){
   modalSessoes.style.display="flex";
@@ -310,14 +343,59 @@ function abrirPopupSessoes(sessoes,user,novoToken){
   `).join("");
 }
 
-async function encerrarSessao(idSessao,userId,token,email){
-  await sb.from("sessoes").delete().eq("id",idSessao);
+function abrirPopupSessoes(sessoes, user, novoToken){
+  modalSessoes.style.display = "flex";
 
-  await sb.from("sessoes").insert({
-    user_id:userId,
-    session_token:token,
-    user_agent:navigator.userAgent
-  });
+  listaSessoes.innerHTML = sessoes.map(s => {
+    const device = detectarDispositivo(s.user_agent);
+
+    return `
+      <div class="sessao-item">
+        <div class="sessao-icon">${device.icon}</div>
+
+        <div class="sessao-info">
+          <strong>${device.nome}</strong>
+          <span>${device.descricao}</span>
+        </div>
+
+        <button onclick="encerrarSessao(
+          '${s.id}',
+          '${user.id}',
+          '${novoToken}',
+          '${user.email}'
+        )">
+          Desconectar
+        </button>
+      </div>
+    `;
+  }).join("");
+}
+function detectarDispositivo(ua){
+  ua = ua.toLowerCase();
+
+  if(/iphone|android.*mobile/.test(ua)){
+    return {
+      icon: "📱",
+      nome: "Celular",
+      descricao: "Acesso via smartphone"
+    };
+  }
+
+  if(/ipad|tablet|android/.test(ua)){
+    return {
+      icon: "📲",
+      nome: "Tablet",
+      descricao: "Acesso via tablet"
+    };
+  }
+
+  return {
+    icon: "💻",
+    nome: "Computador",
+    descricao: "Acesso via navegador"
+  };
+}
+
 
   localStorage.setItem("session_token",token);
   localStorage.setItem("usuario_email",email);

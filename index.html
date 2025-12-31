@@ -1506,10 +1506,6 @@ function apexParaReais(apex){
   return (Number(apex) / APEX_POR_REAL).toFixed(2);
 }
 
-
-
-
-  
 let redirecionando = false;
 let logoutEmAndamento = false;
 
@@ -2428,17 +2424,23 @@ setTimeout(() => {
 
   
 async function validarSessao() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (sessionStorage.getItem("clena_logout") === "1") {
+  const logoutFlag = sessionStorage.getItem("clena_logout");
+
+  // 🔥 SE ESTÁ DESLOGANDO, NÃO FAZ MAIS NADA
+  if (logoutFlag === "1") {
     return false;
   }
+
+  const { data: { session } } = await sb.auth.getSession();
+
   if (!session || !session.user) {
-    if (!redirecionando) {
+    if (!redirecionando && !logoutFlag) {
       redirecionando = true;
       location.replace("login.html");
     }
     return false;
   }
+}
 
   const userId = session.user.id;
 
@@ -2867,14 +2869,15 @@ window.addEventListener("message", (event) => {
 </script>
 <script>
 (async () => {
-  sessionStorage.removeItem("clena_logout");
 
+  // 🔥 NÃO LIMPA clena_logout AQUI
   const ok = await validarSessao();
   if (!ok) return;
 
   await carregarAvatarHeader();
   await iniciarApp();
 })();
+
 </script>
 
 </body>

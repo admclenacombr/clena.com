@@ -2844,6 +2844,18 @@ window.addEventListener("message", (event) => {
     }, 600);
   }
 </script>
+<script>
+(async () => {
+  const ok = await validarSessao();
+  if (!ok) return;
 
+  await carregarAvatarHeader();
+  await iniciarApp();
+})();
+</script>
+
+
+
+  
 </body>
 </html>

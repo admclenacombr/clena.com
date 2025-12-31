@@ -4,19 +4,17 @@
 <meta charset="UTF-8">
 <title>Entrar • CLENA TV</title>
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-/* ================= RESET / BLOQUEIOS ================= */
+/* ================= RESET ================= */
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
 html,body{
   margin:0;width:100%;height:100%;
   overflow:hidden;background:#0b0b0d;color:#fff
 }
-html{touch-action:manipulation}
 
 /* ================= THEME ================= */
 :root{
@@ -45,7 +43,6 @@ body{
   box-shadow:0 40px 120px rgba(0,0,0,.9);
 }
 
-/* ================= LOGO ================= */
 .logo{
   text-align:center;
   font-size:34px;
@@ -54,7 +51,6 @@ body{
 }
 .logo span{color:var(--accent)}
 
-/* ================= FORM ================= */
 .group{margin-bottom:16px}
 label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block}
 input{
@@ -64,14 +60,12 @@ input{
 }
 input:focus{outline:none;border-color:var(--accent)}
 
-/* ================= BUTTONS ================= */
 .btn{
   width:100%;height:52px;border:none;border-radius:14px;
   font-size:16px;font-weight:800;cursor:pointer
 }
 .btn-primary{background:var(--accent);color:#fff;margin-top:6px}
 
-/* ===== GOOGLE ICON ===== */
 .google-btn{
   margin:16px auto 0;width:52px;height:52px;border-radius:50%;
   background:#0f0f13;border:1px solid #242428;
@@ -81,83 +75,48 @@ input:focus{outline:none;border-color:var(--accent)}
 .google-btn:hover{background:#18181d;transform:scale(1.05)}
 .google-btn img{width:32px;height:32px}
 
-/* ================= FOOTER ================= */
 .footer{
   display:flex;justify-content:space-between;margin-top:22px;font-size:13px
 }
 .footer a{color:#c7c7cc;text-decoration:none;cursor:pointer}
 .footer a:hover{text-decoration:underline}
 
-/* ================= MSG ================= */
 .msg{margin-top:14px;min-height:18px;font-size:14px}
 .msg.error{color:#f87171}
 .msg.success{color:#22c55e}
 
-/* ================= MODAIS ================= */
+/* ================= MODAL ================= */
 .modal{
   position:fixed;inset:0;background:rgba(0,0,0,.85);
   display:none;align-items:center;justify-content:center;
   z-index:9999
 }
+
 .sessao-box{
   background:#141417;
   padding:26px;border-radius:18px;
   width:420px;max-width:92%
 }
 
-/* ================= SESSÕES BONITAS ================= */
+/* ================= SESSÕES ================= */
 .sessao-item{
-  display:flex;
-  align-items:center;
-  gap:14px;
-
-  background:#0f0f13;
-  border:1px solid #242428;
-  padding:14px;
-  border-radius:14px;
-  margin-bottom:12px;
+  display:flex;align-items:center;gap:14px;
+  background:#0f0f13;border:1px solid #242428;
+  padding:14px;border-radius:14px;margin-bottom:12px;
 }
-
 .sessao-icon{
-  width:48px;
-  height:48px;
-  border-radius:12px;
+  width:48px;height:48px;border-radius:12px;
   background:#18181d;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:flex;align-items:center;justify-content:center;
   font-size:22px;
 }
-
-.sessao-info{
-  flex:1;
-}
-
-.sessao-info strong{
-  display:block;
-  font-size:14px;
-}
-
-.sessao-info span{
-  font-size:12px;
-  color:#9ca3af;
-}
-
+.sessao-info{flex:1}
+.sessao-info strong{display:block;font-size:14px}
+.sessao-info span{font-size:12px;color:#9ca3af}
 .sessao-item button{
-  padding:10px 14px;
-  border:none;
-  border-radius:10px;
-  background:#e50914;
-  color:#fff;
-  font-weight:800;
-  cursor:pointer;
-  white-space:nowrap;
+  padding:10px 14px;border:none;border-radius:10px;
+  background:#e50914;color:#fff;font-weight:800;cursor:pointer
 }
-
-.sessao-item button:hover{
-  filter:brightness(1.1);
-}
-
 </style>
 </head>
 
@@ -166,97 +125,47 @@ input:focus{outline:none;border-color:var(--accent)}
 <div class="card">
   <div class="logo">CLENA <span>TV</span></div>
 
-  <div class="group">
-    <label>Email</label>
-    <input id="email" type="email">
-  </div>
-
-  <div class="group">
-    <label>Senha</label>
-    <input id="senha" type="password">
-  </div>
+  <div class="group"><label>Email</label><input id="email" type="email"></div>
+  <div class="group"><label>Senha</label><input id="senha" type="password"></div>
 
   <button id="btnLogin" class="btn btn-primary">Entrar</button>
 
   <div id="btnGoogle" class="google-btn">
-    <img src="google.png" alt="Google">
+    <img src="google.png">
   </div>
 
   <div class="footer">
-    <a id="abrirCadastro">Criar conta</a>
     <a id="btnReset">Esqueci a senha</a>
   </div>
 
   <div class="msg" id="msg"></div>
 </div>
 
-<!-- ================= MODAL CADASTRO ================= -->
-<div class="modal" id="modalCadastro">
-  <div class="card">
-    <h2 style="margin-top:0">Criar conta</h2>
-
-    <div class="group"><label>Email</label><input id="c_email"></div>
-    <div class="group"><label>CPF</label><input id="c_cpf"></div>
-    <div class="group"><label>WhatsApp</label><input id="c_whats"></div>
-    <div class="group"><label>Senha</label><input id="c_senha" type="password"></div>
-    <div class="group"><label>Confirmar senha</label><input id="c_confirma" type="password"></div>
-
-    <button id="btnCadastro" class="btn btn-primary">Cadastrar</button>
-
-    <div class="footer">
-      <a id="fecharCadastro">Cancelar</a>
-    </div>
-
-    <div class="msg" id="msgCadastro"></div>
-  </div>
-</div>
-
 <!-- ================= MODAL SESSÕES ================= -->
 <div class="modal" id="modalSessoes">
   <div class="sessao-box">
     <h3>Limite de dispositivos atingido</h3>
-    <p style="color:#aaa;font-size:14px">
-      Escolha uma sessão para encerrar:
-    </p>
+    <p style="color:#aaa;font-size:14px">Escolha uma sessão para encerrar:</p>
     <div id="listaSessoes"></div>
   </div>
 </div>
 
 <script>
-/* ===== BLOQUEIA ZOOM ===== */
-window.addEventListener("wheel",e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
-window.addEventListener("keydown",e=>{
-  if(e.ctrlKey && ["+","-","="].includes(e.key)) e.preventDefault();
-});
-
-/* ===== SUPABASE ===== */
 const sb = supabase.createClient(
   "https://dxkszikemntfusfyrzos.supabase.co",
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
-/* ===== LOGIN ===== */
 btnLogin.onclick = async ()=>{
   msg.textContent="";
   const { data, error } = await sb.auth.signInWithPassword({
     email: email.value.trim(),
     password: senha.value
   });
-
-  if(error){
-    msg.textContent="Email ou senha inválidos";
-    msg.className="msg error";return;
-  }
-
-  if(!data.session){
-    msg.textContent="Confirme seu e-mail para continuar";
-    msg.className="msg error";return;
-  }
-
+  if(error){ msg.textContent="Login inválido"; msg.className="msg error"; return; }
   controlarSessoes(data.user);
 };
 
-/* ===== GOOGLE ===== */
 btnGoogle.onclick = async ()=>{
   await sb.auth.signInWithOAuth({
     provider:"google",
@@ -264,139 +173,63 @@ btnGoogle.onclick = async ()=>{
   });
 };
 
-/* ===== RESET ===== */
-btnReset.onclick = async ()=>{
-  if(!email.value){
-    msg.textContent="Digite seu email";
-    msg.className="msg error";return;
-  }
-  await sb.auth.resetPasswordForEmail(email.value,{
-    redirectTo: location.origin + "/login.html"
-  });
-  msg.textContent="Email de recuperação enviado";
-  msg.className="msg success";
-};
-
-/* ===== CADASTRO ===== */
-abrirCadastro.onclick=()=>modalCadastro.style.display="flex";
-fecharCadastro.onclick=()=>modalCadastro.style.display="none";
-
-btnCadastro.onclick = async ()=>{
-  msgCadastro.textContent="";
-  if(c_senha.value!==c_confirma.value){
-    msgCadastro.textContent="Senhas não conferem";
-    msgCadastro.className="msg error";return;
-  }
-
-  const { data, error } = await sb.auth.signUp({
-    email:c_email.value.trim(),
-    password:c_senha.value
-  });
-
-  if(error){
-    msgCadastro.textContent=error.message;
-    msgCadastro.className="msg error";return;
-  }
-
-  await sb.from("user").insert({
-    id:data.user.id,
-    email:data.user.email,
-    cpf:c_cpf.value.replace(/\D/g,""),
-    whatsapp:c_whats.value.replace(/\D/g,"")
-  });
-
-  msgCadastro.textContent="Conta criada! Confirme seu e-mail.";
-  msgCadastro.className="msg success";
-};
-
-/* ===== CONTROLE DE SESSÕES ===== */
 async function controlarSessoes(user){
   const token = crypto.randomUUID();
 
   const { data: perfil } = await sb
-    .from("user").select("max_sessoes")
-    .eq("id",user.id).single();
+    .from("user").select("max_sessoes").eq("id",user.id).single();
 
   const { data: sessoes } = await sb
     .from("sessoes").select("*")
-    .eq("user_id",user.id)
-    .order("created_at",{ascending:false});
+    .eq("user_id",user.id);
 
   if(sessoes.length >= perfil.max_sessoes){
     abrirPopupSessoes(sessoes,user,token);
     return;
   }
-
   criarSessao(user,token);
 }
 
+async function criarSessao(user,token){
+  await sb.from("sessoes").insert({
+    user_id:user.id,
+    session_token:token,
+    user_agent:navigator.userAgent
+  });
+  localStorage.setItem("session_token",token);
+  localStorage.setItem("usuario_email",user.email);
+  location.replace("index.html");
+}
 
 function abrirPopupSessoes(sessoes,user,novoToken){
   modalSessoes.style.display="flex";
-  listaSessoes.innerHTML = sessoes.map(s=>`
-    <div class="sessao-item">
-      <div style="font-size:13px;color:#aaa">${s.user_agent}</div>
-      <button onclick="encerrarSessao('${s.id}','${user.id}','${novoToken}','${user.email}')">
-        Encerrar esta sessão
-      </button>
-    </div>
-  `).join("");
-}
-
-function abrirPopupSessoes(sessoes, user, novoToken){
-  modalSessoes.style.display = "flex";
-
-  listaSessoes.innerHTML = sessoes.map(s => {
-    const device = detectarDispositivo(s.user_agent);
-
+  listaSessoes.innerHTML = sessoes.map(s=>{
+    const d = detectarDispositivo(s.user_agent);
     return `
       <div class="sessao-item">
-        <div class="sessao-icon">${device.icon}</div>
-
+        <div class="sessao-icon">${d.icon}</div>
         <div class="sessao-info">
-          <strong>${device.nome}</strong>
-          <span>${device.descricao}</span>
+          <strong>${d.nome}</strong>
+          <span>${d.descricao}</span>
         </div>
-
-        <button onclick="encerrarSessao(
-          '${s.id}',
-          '${user.id}',
-          '${novoToken}',
-          '${user.email}'
-        )">
+        <button onclick="encerrarSessao('${s.id}','${user.id}','${novoToken}','${user.email}')">
           Desconectar
         </button>
-      </div>
-    `;
+      </div>`;
   }).join("");
 }
-function detectarDispositivo(ua){
-  ua = ua.toLowerCase();
 
-  if(/iphone|android.*mobile/.test(ua)){
-    return {
-      icon: "📱",
-      nome: "Celular",
-      descricao: "Acesso via smartphone"
-    };
-  }
-
-  if(/ipad|tablet|android/.test(ua)){
-    return {
-      icon: "📲",
-      nome: "Tablet",
-      descricao: "Acesso via tablet"
-    };
-  }
-
-  return {
-    icon: "💻",
-    nome: "Computador",
-    descricao: "Acesso via navegador"
-  };
+async function encerrarSessao(id,userId,token,email){
+  await sb.from("sessoes").delete().eq("id",id);
+  criarSessao({id,email},token);
 }
 
-
+function detectarDispositivo(ua){
+  ua = ua.toLowerCase();
+  if(/iphone|android.*mobile/.test(ua)) return {icon:"📱",nome:"Celular",descricao:"Smartphone"};
+  if(/ipad|tablet/.test(ua)) return {icon:"📲",nome:"Tablet",descricao:"Tablet"};
+  return {icon:"💻",nome:"Computador",descricao:"Desktop / Notebook"};
+}
 </script>
 
 </body>

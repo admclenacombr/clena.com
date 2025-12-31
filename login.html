@@ -343,20 +343,30 @@ msgCadastro.className="msg success";
 async function controlarSessoes(user){
   const token = crypto.randomUUID();
 
-  const { data: perfil } = await sb
-    .from("user").select("max_sessoes")
-    .eq("id",user.id).single();
+  // tenta carregar perfil
+  const { data: perfil, error: perfilErro } = await sb
+    .from("user")
+    .select("max_sessoes")
+    .eq("id", user.id)
+    .maybeSingle();
 
+  // fallback seguro
+  const maxSessoes = perfil?.max_sessoes || 1;
+
+  // tenta carregar sessões
   const { data: sessoes } = await sb
-    .from("sessoes").select("*")
-    .eq("user_id",user.id);
+    .from("sessoes")
+    .select("*")
+    .eq("user_id", user.id);
 
-  if(sessoes.length >= perfil.max_sessoes){
-    abrirPopupSessoes(sessoes,user,token);
+  const total = Array.isArray(sessoes) ? sessoes.length : 0;
+
+  if (total >= maxSessoes) {
+    abrirPopupSessoes(sessoes || [], user, token);
     return;
   }
 
-  await criarSessao(user,token);
+  await criarSessao(user, token);
 }
 
 async function criarSessao(user,token){

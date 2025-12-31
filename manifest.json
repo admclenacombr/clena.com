@@ -2,7 +2,7 @@
   "name": "CLENA TV",
   "short_name": "CLENA TV",
   "description": "Streaming Sessão",
-  "start_url": "/index.html",
+  "start_url": "/login.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

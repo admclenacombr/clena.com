@@ -1690,9 +1690,10 @@ async function perfilUploadAvatar(input){
   const avatarUrl =
     `https://sessao99.b-cdn.net/avatars/${nome}`;
 
-  await sb.from("usuarios")
-    .update({ avatar_url: avatarUrl })
-    .eq("id", perfilUserId);
+await sb.from("user")
+  .update({ avatar_url: avatarUrl })
+  .eq("id", perfilUserId);
+
 
   pAvatar.src = avatarUrl;
   await carregarAvatarHeader();
@@ -2298,17 +2299,13 @@ async function logout(){
 
   logoutEmAndamento = true;
 
-  // marca logout global
-  sessionStorage.setItem("clena_logout", "1");
+sessionStorage.setItem("clena_logout", "1");
 
-  try {
-    await sb.auth.signOut();
-  } catch (e) {
-    console.warn("Erro no signOut:", e);
-  }
+await sb.auth.signOut();
 
-  localStorage.clear();
-  sessionStorage.clear();
+localStorage.clear();
+// NÃO LIMPE sessionStorage aqui
+
 
   // 🔥 delay curto para o Supabase sincronizar
   setTimeout(() => {
@@ -2454,6 +2451,7 @@ async function validarSessao() {
     `)
     .eq("id", userId)
     .maybeSingle();
+    .single()
 
   if (error || !user) {
     await sb.auth.signOut();

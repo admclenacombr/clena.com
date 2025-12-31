@@ -2422,67 +2422,39 @@ setTimeout(() => {
 }
 
 
-  
 async function validarSessao() {
-  const logoutFlag = sessionStorage.getItem("clena_logout");
-
-  // 🔥 se está em logout, não faz nada
-  if (logoutFlag === "1") {
-    return false;
-  }
+  if (sessionStorage.getItem("clena_logout") === "1") return false;
 
   const { data: { session } } = await sb.auth.getSession();
-
-  if (!session || !session.user) {
-    if (!redirecionando) {
-      redirecionando = true;
-      location.replace("login.html");
-    }
+  if (!session?.user) {
+    location.replace("login.html");
     return false;
   }
 
-  const userId = session.user.id;
-
-  const { data: user, error } = await sb
+  const { data: user } = await sb
     .from("user")
-    .select(`
-      id,
-      email,
-      status,
-      trial_expires_at,
-      tipo_assinatura,
-      valor_assinatura,
-      vencimento_assinatura
-    `)
-    .eq("id", userId)
+    .select("tipo_assinatura, status")
+    .eq("id", session.user.id)
     .single();
 
-  if (error || !user) {
-    await sb.auth.signOut();
+  if (!user) {
     location.replace("login.html");
     return false;
   }
 
   if (!user.tipo_assinatura) {
-    if (!redirecionando) {
-      redirecionando = true;
-      location.replace("planos.html");
-    }
+    location.replace("planos.html");
     return false;
   }
 
   if (user.status === "bloqueado") {
-    renderBloqueio?.(user.email);
+    renderBloqueio();
     return false;
   }
 
-  usuario = {
-    id: user.id,
-    email: user.email
-  };
-
   return true;
 }
+
 
 
 
@@ -2697,17 +2669,13 @@ function mostrarSessaoEncerrada(userAgent){
 
   document.getElementById("sessaoOverlay").style.display = "flex";
 }
-
-function sessaoSair(){
-  localStorage.clear();
-  sessionStorage.clear();
-
-  if (window.matchMedia("(display-mode: standalone)").matches) {
-    location.href = "login.html";
-  } else {
-    location.replace("login.html");
-  }
+async function logout() {
+  sessionStorage.setItem("clena_logout", "1");
+  await sb.auth.signOut();
+  location.replace("login.html");
 }
+
+
 function abrirApexInfo(){
   document.body.classList.add("modal-open");
   document.getElementById("apexOverlay").style.display = "flex";

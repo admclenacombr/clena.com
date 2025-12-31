@@ -2842,6 +2842,22 @@ window.addEventListener("message", (event) => {
 });
 
 </script>
+<script>
+window.addEventListener("message", (event) => {
+  if (event.data === "filtros_aplicados") {
+    // fecha overlay
+    const overlay = document.getElementById("filtrosOverlay");
+    if (overlay) overlay.style.display = "none";
+
+    document.body.classList.remove("modal-open");
+    sessionStorage.removeItem("clena_filtros_aberto");
+
+    // 🔥 APLICA FILTROS DE VERDADE
+    aplicarFiltrosAvancados();
+    atualizarBotaoFiltros();
+  }
+});
+</script>
 
 <script>
   // 🔥 FAILSAFE ABSOLUTO DA ABERTURA

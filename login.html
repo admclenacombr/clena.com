@@ -10,19 +10,17 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-/* ================= RESET / BLOQUEIOS ================= */
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
 html,body{
   margin:0;
   width:100%;
   height:100%;
-  overflow:hidden;               /* ❌ SEM SCROLL */
+  overflow:hidden;
   background:#0b0b0d;
   color:#fff;
 }
 html{touch-action:manipulation}
 
-/* ================= THEME ================= */
 :root{
   --card:#141417;
   --accent:#e50914;
@@ -31,16 +29,13 @@ html{touch-action:manipulation}
   --input:#0f0f13;
 }
 
-/* ================= BACKGROUND ================= */
 body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background:
-    radial-gradient(80% 60% at 50% 20%, #1b1b20 0%, #0b0b0d 70%);
+  background:radial-gradient(80% 60% at 50% 20%, #1b1b20 0%, #0b0b0d 70%);
 }
 
-/* ================= CARD ================= */
 .card{
   width:420px;
   max-width:92%;
@@ -50,7 +45,6 @@ body{
   box-shadow:0 40px 120px rgba(0,0,0,.9);
 }
 
-/* ================= LOGO ================= */
 .logo{
   text-align:center;
   font-size:34px;
@@ -59,7 +53,6 @@ body{
 }
 .logo span{color:var(--accent)}
 
-/* ================= FORM ================= */
 .group{margin-bottom:16px}
 label{
   font-size:13px;
@@ -81,7 +74,6 @@ input:focus{
   border-color:var(--accent);
 }
 
-/* ================= BUTTONS ================= */
 .btn{
   width:100%;
   height:52px;
@@ -97,7 +89,6 @@ input:focus{
   margin-top:6px;
 }
 
-/* ===== GOOGLE ICON ===== */
 .google-btn{
   margin:16px auto 0;
   width:52px;
@@ -109,18 +100,12 @@ input:focus{
   align-items:center;
   justify-content:center;
   cursor:pointer;
-  transition:.2s;
-}
-.google-btn:hover{
-  background:#18181d;
-  transform:scale(1.05);
 }
 .google-btn img{
-  width:56px;
-  height:56px;
+  width:32px;
+  height:32px;
 }
 
-/* ================= FOOTER ================= */
 .footer{
   display:flex;
   justify-content:space-between;
@@ -134,7 +119,6 @@ input:focus{
 }
 .footer a:hover{text-decoration:underline}
 
-/* ================= MSG ================= */
 .msg{
   margin-top:14px;
   min-height:18px;
@@ -143,7 +127,7 @@ input:focus{
 .msg.error{color:#f87171}
 .msg.success{color:#22c55e}
 
-/* ================= MODAL ================= */
+/* ===== MODAIS ===== */
 .modal{
   position:fixed;
   inset:0;
@@ -151,6 +135,33 @@ input:focus{
   display:none;
   align-items:center;
   justify-content:center;
+  z-index:9999;
+}
+
+.sessao-box{
+  background:#141417;
+  padding:26px;
+  border-radius:18px;
+  width:420px;
+  max-width:92%;
+}
+.sessao-item{
+  background:#0f0f13;
+  border:1px solid #242428;
+  padding:14px;
+  border-radius:12px;
+  margin-bottom:10px;
+}
+.sessao-item button{
+  margin-top:8px;
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#e50914;
+  color:#fff;
+  font-weight:700;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -172,9 +183,8 @@ input:focus{
 
   <button id="btnLogin" class="btn btn-primary">Entrar</button>
 
-  <!-- GOOGLE -->
   <div id="btnGoogle" class="google-btn">
-    <img src="google.png" alt="Google">
+    <img src="google.png">
   </div>
 
   <div class="footer">
@@ -185,60 +195,87 @@ input:focus{
   <div class="msg" id="msg"></div>
 </div>
 
-<!-- ================= MODAL CADASTRO ================= -->
-<div class="modal" id="modal">
-  <div class="card">
-    <h2 style="margin-top:0">Criar conta</h2>
-
-    <div class="group">
-      <label>Email</label>
-      <input id="c_email" type="email">
-    </div>
-
-    <div class="group">
-      <label>CPF</label>
-      <input id="c_cpf" placeholder="000.000.000-00">
-    </div>
-
-    <div class="group">
-      <label>WhatsApp</label>
-      <input id="c_whats" placeholder="(99) 99999-9999">
-    </div>
-
-    <div class="group">
-      <label>Senha</label>
-      <input id="c_senha" type="password">
-    </div>
-
-    <div class="group">
-      <label>Confirmar senha</label>
-      <input id="c_confirma" type="password">
-    </div>
-
-    <button id="btnCadastro" class="btn btn-primary">Cadastrar</button>
-
-    <div class="footer">
-      <a id="fecharCadastro">Cancelar</a>
-    </div>
-
-    <div class="msg" id="msgCadastro"></div>
+<!-- MODAL SESSÕES -->
+<div class="modal" id="modalSessoes">
+  <div class="sessao-box">
+    <h3>Limite de dispositivos atingido</h3>
+    <p style="color:#aaa;font-size:14px">
+      Escolha um dispositivo para encerrar:
+    </p>
+    <div id="listaSessoes"></div>
   </div>
 </div>
 
 <script>
-/* ===== BLOQUEIA ZOOM ===== */
-window.addEventListener("wheel",e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
-window.addEventListener("keydown",e=>{
-  if(e.ctrlKey && ["+","-","="].includes(e.key)) e.preventDefault();
-});
-
-/* ===== SUPABASE ===== */
 const sb = supabase.createClient(
   "https://dxkszikemntfusfyrzos.supabase.co",
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
-/* ===== LOGIN EMAIL ===== */
+async function registrarSessao(user){
+  const token = crypto.randomUUID();
+
+  const { data: perfil } = await sb
+    .from("user")
+    .select("max_sessoes")
+    .eq("id", user.id)
+    .single();
+
+  const { data: sessoes } = await sb
+    .from("sessoes")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending:false });
+
+  if (sessoes.length >= perfil.max_sessoes) {
+    abrirPopupSessoes(sessoes, user, token);
+    return;
+  }
+
+  await criarSessao(user, token);
+}
+
+async function criarSessao(user, token){
+  await sb.from("sessoes").insert({
+    user_id: user.id,
+    session_token: token,
+    user_agent: navigator.userAgent
+  });
+
+  localStorage.setItem("session_token", token);
+  localStorage.setItem("usuario_email", user.email);
+  location.replace("index.html");
+}
+
+function abrirPopupSessoes(sessoes, user, novoToken){
+  modalSessoes.style.display="flex";
+  listaSessoes.innerHTML = sessoes.map(s => `
+    <div class="sessao-item">
+      <div style="font-size:13px;color:#aaa">
+        ${s.user_agent}
+      </div>
+      <button onclick="encerrarSessao('${s.id}','${user.id}','${novoToken}','${user.email}')">
+        Encerrar esta sessão
+      </button>
+    </div>
+  `).join("");
+}
+
+async function encerrarSessao(idSessao, userId, token, email){
+  await sb.from("sessoes").delete().eq("id", idSessao);
+
+  await sb.from("sessoes").insert({
+    user_id:userId,
+    session_token:token,
+    user_agent:navigator.userAgent
+  });
+
+  localStorage.setItem("session_token", token);
+  localStorage.setItem("usuario_email", email);
+  location.replace("index.html");
+}
+
+/* LOGIN */
 btnLogin.onclick = async ()=>{
   msg.textContent="";
   const { data, error } = await sb.auth.signInWithPassword({
@@ -258,20 +295,18 @@ btnLogin.onclick = async ()=>{
     return;
   }
 
-  location.replace("index.html");
+  registrarSessao(data.user);
 };
 
-/* ===== GOOGLE LOGIN ===== */
+/* GOOGLE */
 btnGoogle.onclick = async ()=>{
   await sb.auth.signInWithOAuth({
     provider:"google",
-    options:{
-      redirectTo: location.origin + "/login.html"
-    }
+    options:{ redirectTo: location.origin + "/login.html" }
   });
 };
 
-/* ===== RESET SENHA ===== */
+/* RESET */
 btnReset.onclick = async ()=>{
   if(!email.value){
     msg.textContent="Digite seu email";
@@ -285,46 +320,6 @@ btnReset.onclick = async ()=>{
 
   msg.textContent="Email de recuperação enviado";
   msg.className="msg success";
-};
-
-/* ===== MODAL ===== */
-abrirCadastro.onclick=()=>modal.style.display="flex";
-fecharCadastro.onclick=()=>modal.style.display="none";
-
-/* ===== CADASTRO ===== */
-btnCadastro.onclick = async ()=>{
-  msgCadastro.textContent="";
-
-  if(c_senha.value!==c_confirma.value){
-    msgCadastro.textContent="Senhas não conferem";
-    msgCadastro.className="msg error";
-    return;
-  }
-
-  const { data, error } = await sb.auth.signUp({
-    email:c_email.value.trim(),
-    password:c_senha.value
-  });
-
-  if(error){
-    msgCadastro.textContent=error.message;
-    msgCadastro.className="msg error";
-    return;
-  }
-
-  const trial=new Date(Date.now()+10*24*60*60*1000);
-
-  await sb.from("user").insert({
-    id:data.user.id,
-    email:data.user.email,
-    cpf:c_cpf.value.replace(/\D/g,""),
-    whatsapp:c_whats.value.replace(/\D/g,""),
-    status:"pendente",
-    trial_expires_at:trial.toISOString()
-  });
-
-  msgCadastro.textContent="Conta criada! Confirme seu e-mail.";
-  msgCadastro.className="msg success";
 };
 </script>
 

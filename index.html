@@ -2,71 +2,137 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>CLENA TV</title>
+<title>Entrar • CLENA TV</title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-  background:#0f0f10;
-  color:#fff;
-  font-family:Inter,Arial,sans-serif;
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+html,body{
+  margin:0;width:100%;height:100%;
+  background:#0b0b0d;color:#fff;
+  display:flex;align-items:center;justify-content:center
 }
-
-header{
-  height:64px;
-  display:flex;
-  align-items:center;
-  padding:0 24px;
-  background:#000;
-  font-size:20px;
-  font-weight:800;
-}
-header span{color:#e50914}
-
-.grid{
-  padding:24px;
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:18px;
-}
-
 .card{
-  background:#1b1b1e;
-  border-radius:12px;
-  overflow:hidden;
-  cursor:pointer;
-  transition:.25s;
+  width:420px;max-width:92%;
+  background:#141417;
+  border-radius:22px;
+  padding:36px;
+  box-shadow:0 40px 120px rgba(0,0,0,.9)
 }
-.card:hover{
-  transform:scale(1.05);
-  box-shadow:0 20px 40px rgba(0,0,0,.6);
-}
-
-.card img{
-  width:100%;
-  height:240px;
-  object-fit:cover;
-}
-
-.card .title{
-  padding:10px;
-  font-size:14px;
-  font-weight:600;
+.logo{
   text-align:center;
+  font-size:34px;
+  font-weight:900;
+  margin-bottom:30px
+}
+.logo span{color:#e50914}
+.group{margin-bottom:16px}
+label{font-size:13px;color:#9ca3af}
+input{
+  width:100%;
+  padding:14px 16px;
+  border-radius:12px;
+  border:1px solid #242428;
+  background:#0f0f13;
+  color:#fff;
+  font-size:15px
+}
+.btn{
+  width:100%;
+  height:52px;
+  border:none;
+  border-radius:14px;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer
+}
+.btn-primary{background:#e50914;color:#fff}
+.google-btn{
+  margin:16px auto 0;
+  width:52px;height:52px;
+  border-radius:50%;
+  background:#0f0f13;
+  border:1px solid #242428;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer
+}
+.footer{
+  display:flex;justify-content:space-between;
+  margin-top:22px;font-size:13px
+}
+.footer a{color:#c7c7cc;text-decoration:none;cursor:pointer}
+.msg{margin-top:14px;min-height:18px;font-size:14px}
+.msg.error{color:#f87171}
+.msg.success{color:#22c55e}
+.modal{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;align-items:center;justify-content:center;
+  z-index:9999
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  CLENA <span>TV</span>
-</header>
+<!-- LOGIN -->
+<div class="card">
+  <div class="logo">CLENA <span>TV</span></div>
 
-<div class="grid" id="grid"></div>
+  <div class="group">
+    <label>Email</label>
+    <input id="email">
+  </div>
+
+  <div class="group">
+    <label>Senha</label>
+    <input id="senha" type="password">
+  </div>
+
+  <button id="btnLogin" class="btn btn-primary">Entrar</button>
+
+  <div id="btnGoogle" class="google-btn">G</div>
+
+  <div class="footer">
+    <a id="abrirCadastro">Criar conta</a>
+    <a id="btnReset">Esqueci a senha</a>
+  </div>
+
+  <div class="msg" id="msg"></div>
+</div>
+
+<!-- CADASTRO -->
+<div class="modal" id="modalCadastro">
+  <div class="card">
+    <h2>Criar conta</h2>
+
+    <div class="group">
+      <label>Email</label>
+      <input id="c_email">
+    </div>
+
+    <div class="group">
+      <label>Senha</label>
+      <input id="c_senha" type="password">
+    </div>
+
+    <div class="group">
+      <label>Confirmar senha</label>
+      <input id="c_confirma" type="password">
+    </div>
+
+    <button id="btnCadastro" class="btn btn-primary">Cadastrar</button>
+
+    <div class="footer">
+      <a id="fecharCadastro">Cancelar</a>
+    </div>
+
+    <div class="msg" id="msgCadastro"></div>
+  </div>
+</div>
 
 <script>
 /* ================= SUPABASE ================= */
@@ -75,86 +141,114 @@ const sb = supabase.createClient(
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
-/* ================= VALIDAR SESSÃO ================= */
-let redirecionando = false;
+/* ================= MODAL ================= */
+abrirCadastro.onclick = () =>
+  modalCadastro.style.display="flex";
 
-async function validarSessao(){
-  const email = localStorage.getItem("usuario_email");
-  const token = localStorage.getItem("session_token");
+fecharCadastro.onclick = () =>
+  modalCadastro.style.display="none";
 
-  if(!email || !token){
-    sair();
-    return false;
-  }
+/* ================= LOGIN ================= */
+btnLogin.onclick = async ()=>{
+  msg.textContent="";
 
-  const { data, error } = await sb
-    .from("usuarios")
-    .select("session_token")
-    .eq("email", email)
-    .single();
-
-  if(error || !data){
-    sair();
-    return false;
-  }
-
-  if(data.session_token !== token){
-    alert("Sua sessão foi encerrada em outro dispositivo.");
-    sair();
-    return false;
-  }
-
-  return true;
-}
-
-function sair(){
-  if(redirecionando) return;
-  redirecionando = true;
-
-  localStorage.clear();
-  sessionStorage.clear();
-  location.replace("login.html");
-}
-
-/* ================= CARREGAR FILMES ================= */
-async function carregarFilmes(){
-  const { data, error } = await sb
-    .from("filmes")
-    .select("id,titulo,capa_url,descricao,video_url")
-    .order("id", { ascending:false });
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: email.value.trim(),
+    password: senha.value
+  });
 
   if(error){
-    alert("Erro ao carregar filmes");
-    console.error(error);
+    msg.textContent="Email ou senha inválidos";
+    msg.className="msg error";
     return;
   }
 
-  const grid = document.getElementById("grid");
+  controlarSessoes(data.user);
+};
 
-  grid.innerHTML = data.map(f => `
-    <div class="card" onclick='abrirPlayer(${JSON.stringify(f)})'>
-      <img src="${f.capa_url}">
-      <div class="title">${f.titulo}</div>
-    </div>
-  `).join("");
+/* ================= GOOGLE ================= */
+btnGoogle.onclick = async ()=>{
+  await sb.auth.signInWithOAuth({
+    provider:"google",
+    options:{ redirectTo: location.origin + "/login.html" }
+  });
+};
+
+/* ================= RESET ================= */
+btnReset.onclick = async ()=>{
+  if(!email.value){
+    msg.textContent="Informe seu email";
+    msg.className="msg error";
+    return;
+  }
+
+  await sb.auth.resetPasswordForEmail(email.value);
+  msg.textContent="Email de recuperação enviado";
+  msg.className="msg success";
+};
+
+/* ================= CADASTRO ================= */
+btnCadastro.onclick = async ()=>{
+  if(c_senha.value !== c_confirma.value){
+    msgCadastro.textContent="Senhas não conferem";
+    msgCadastro.className="msg error";
+    return;
+  }
+
+  const { data, error } = await sb.auth.signUp({
+    email: c_email.value.trim(),
+    password: c_senha.value
+  });
+
+  if(error){
+    msgCadastro.textContent=error.message;
+    msgCadastro.className="msg error";
+    return;
+  }
+
+  msgCadastro.textContent="Conta criada!";
+  msgCadastro.className="msg success";
+
+  email.value = c_email.value;
+  senha.value = c_senha.value;
+
+  setTimeout(()=>{
+    modalCadastro.style.display="none";
+    msgCadastro.textContent="";
+  },800);
+};
+
+/* ================= CONTROLE DE SESSÕES ================= */
+async function controlarSessoes(user){
+  const token = crypto.randomUUID();
+
+  const { data:sessoes } = await sb
+    .from("sessoes")
+    .select("*")
+    .eq("user_id",user.id);
+
+  if(sessoes?.length >= 3){
+    alert("Limite de dispositivos atingido");
+    return;
+  }
+
+  criarSessao(user,token);
 }
 
-/* ================= ABRIR PLAYER ================= */
-function abrirPlayer(item){
-  const dados = encodeURIComponent(JSON.stringify(item));
-  location.href = `player.html?item=${dados}`;
+async function criarSessao(user,token){
+
+  // 🔐 SALVA PARA O INDEX
+  localStorage.setItem("usuario_email", user.email);
+  localStorage.setItem("session_token", token);
+
+  await sb.from("sessoes").insert({
+    user_id:user.id,
+    session_token:token,
+    user_agent:navigator.userAgent
+  });
+
+  location.replace("index.html");
 }
-
-/* ================= INIT ================= */
-(async ()=>{
-  const ok = await validarSessao();
-  if(!ok) return;
-
-  carregarFilmes();
-
-  // 🔁 revalida sessão a cada 15s
-  setInterval(validarSessao, 15000);
-})();
 </script>
 
 </body>
